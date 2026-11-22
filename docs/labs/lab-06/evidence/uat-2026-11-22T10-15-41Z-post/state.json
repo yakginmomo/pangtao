@@ -1,0 +1,44 @@
+{
+  "runId": "uat-2026-11-22T09-04-25-620Z",
+  "baseUrl": "https://sd3cdaba1-4d7hbszvwq-as.a.run.app",
+  "commit": "f371c232715f1185bc46b64ea28335639ae8eabf",
+  "startedAt": "2026-11-22T09:04:25.621Z",
+  "case01": {
+    "id": "636abb66-5f08-45bb-a3bb-1c968b8e10d9",
+    "requestNo": "REQ-20261122-0005",
+    "status": "APPROVED"
+  },
+  "snapshot04": {
+    "requestId": "636abb66-5f08-45bb-a3bb-1c968b8e10d9",
+    "requestNo": "REQ-20261122-0005",
+    "status": "APPROVED",
+    "updatedAt": "2026-11-22T09:04:31.234Z",
+    "histories": [
+      {
+        "id": "80f88627-0913-48e6-a6ad-af0c2bb71e90",
+        "action": "SUBMITTED",
+        "actor": "oum.requester@cpe334.local",
+        "comment": null,
+        "createdAt": "2026-11-22T09:04:30.464Z"
+      },
+      {
+        "id": "a797a603-278e-4e37-8966-9c7c5d40d8a7",
+        "action": "APPROVED",
+        "actor": "t.reviewer@cpe334.local",
+        "comment": "Approved for UAT",
+        "createdAt": "2026-11-22T09:04:31.242Z"
+      }
+    ],
+    "commit": "f371c232715f1185bc46b64ea28335639ae8eabf",
+    "capturedAt": "2026-11-22T09:04:31.707Z"
+  },
+  "createdRequestNos": [
+    "REQ-20261122-0005",
+    "REQ-20261122-0006",
+    "REQ-20261122-0007"
+  ],
+  "postRun": {
+    "at": "2026-11-22T10:15:41.727Z",
+    "commit": "f371c232715f1185bc46b64ea28335639ae8eabf"
+  }
+}
