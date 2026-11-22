@@ -9,7 +9,7 @@ Pangtao is a personal money and expense ledger (CPE 334 Theme 7, Personal Financ
 | Repository | https://github.com/yakginmomo/pangtao |
 | Sprint 1 baseline | Tag `v0.1.0` = commit `bec5575` (release PR #20, 13 Nov 2026) |
 | Release under test | `main` at `64c98f4` (PR #40, 17 Nov 2026), deployed by the **Deploy demo** workflow |
-| Deployed revision | Cloud Run service `pangtao`, image tag `64c98f4fcd293fb67f0d32b1db75943dfbf2c749`; revision name and digest: pangtao-00006-cjx |
+| Deployed revision | Cloud Run service `pangtao`, revision `pangtao-00006-cjx`, image tag `64c98f4fcd293fb67f0d32b1db75943dfbf2c749`; digest `asia-southeast1-docker.pkg.dev/cpe334-th-028-p7/pangtao/pangtao@sha256:0c479894775aa1ac88e0aff965f1e59af94436193f422541f44397f7cb78ff45` |
 | URL | https://pangtao-vowtduxdha-as.a.run.app |
 | Visible version marker | The login page subtitle reads **"Log in to your Pangtao account (67)"**. If it does not, stop and tell the Product Team: you are not on the release under test |
 | Contracts | `docs/sprints/sprint-1/README.md` (conventions, error codes) and `f-01` to `f-08` in the same folder |
