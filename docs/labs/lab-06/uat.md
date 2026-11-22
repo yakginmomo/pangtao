@@ -1,6 +1,6 @@
 # Pangtao Sprint 1 UAT Plan and Handoff (Lab 6, Part A)
 
-Pangtao is a personal money and expense ledger (CPE 334 Theme 7, Personal Finance). This document gives the UAT Team what it needs to test the delivered Sprint 1 release without help from us: the release under test, the scope, the accounts, how data is prepared and reset, and eight executable cases with expected results. Section 7 holds the forms the UAT Team fills in (Parts B to D); section 8 is the Product Team's triage of the findings it receives (Part C).
+Pangtao is a personal money and expense ledger (CPE 334 Theme 7, Personal Finance). This document gives the UAT Team what it needs to test the delivered Sprint 1 release without help from us: the release under test, the scope, the accounts, how data is prepared and reset, and eight executable cases with expected results. Section 7 holds the UAT Team's forms (Parts B to D), transcribed from the UAT Team's own signed record; section 8 is the Product Team's triage of the findings it receives (Part C).
 
 | Item | Value |
 |---|---|
@@ -285,30 +285,36 @@ Check of the accounting invariant (AC-03.4) at the end of UAT-03: net worth = Ca
 
 ## 7. Forms for the UAT Team
 
+Filled from the UAT Team's own records in `ssiriwan/cpe334-approval-system`, branch `lab5-staging` at commit `90e9fac` (22 Nov 2026): [`execution-results-partner.md`](https://github.com/ssiriwan/cpe334-approval-system/blob/90e9facdaeb4ef8555c82aa6962bb3fb4f2baf9f/docs/labs/lab-06/execution-results-partner.md) (execution and finding) and [`acceptance.md`](https://github.com/ssiriwan/cpe334-approval-system/blob/90e9facdaeb4ef8555c82aa6962bb3fb4f2baf9f/docs/labs/lab-06/acceptance.md) (signed decision, §1 "Decision A"). The results, verdicts and evidence IDs are theirs. Their evidence files are in that repository under `docs/labs/lab-06/evidence/`. They executed this document as merged in PR #41 (branch `chore/lab6-uat-doc`). Initial run: 22 Nov 2026, 16:15–16:25. Retest run on the reset database: 21:35–21:40 (Bangkok).
+
 ### 7.1 Execution record (one row per case; Part B)
 
 Record what you actually saw, in your own words and figures; do not copy the expected result. A case is PASS only if every step matched; otherwise give the first step that did not. BLOCKED is not a pass: give the reason.
 
 | Case | Tester (name, team) | Date and time (Bangkok) | Version checked (subtitle "(67)", commit) | Inputs used | Actual result | Failed or blocked step | PASS / FAIL / BLOCKED | Evidence IDs |
 |---|---|---|---|---|---|---|---|---|
-| UAT-01 | | | | | | | | |
-| UAT-02 | | | | | | | | |
-| UAT-03 | | | | | | | | |
-| UAT-04 | | | | | | | | |
-| UAT-05 | | | | | | | | |
-| UAT-06 | | | | | | | | |
-| UAT-07 | | | | | | | | |
-| UAT-08 | | | | | | | | |
+| UAT-01 | Siriwan (ปลวกแดง) | 2026-11-22 21:35 | Subtitle "(67)", commit `64c98f4` | Wrong password, unknown email, valid Alice and Admin credentials, anonymous API calls | Subtitle "(67)" confirmed. Wrong password and unknown email both got a generic 401. Alice lands on `/` and Admin on `/admin/users`. Logout revokes the cookie. Every anonymous API call returns 401 `UNAUTHENTICATED` | None | PASS | `EV-UAT-00`, `EV-UAT-01-a`, `EV-UAT-01-b` |
+| UAT-02 | Thanabun (ปลวกแดง) | 2026-11-22 21:35 (retest after the database reset, see `UATF-01`) | Subtitle "(67)", commit `64c98f4` | Bank Account 50,000, Wallet 2,000, Credit Card 3,500; negative amount, future date, duplicate attempt | Clean start: 0.00 ฿ on every account, no opening balance. Bank Account opening 50,000.00 ฿ saved (201). The duplicate was rejected with 409 `OPENING_BALANCE_EXISTS`. Wallet 2,000.00 ฿ and Credit Card 3,500.00 ฿ openings saved (201). Negative amount rejected with 400 `VALIDATION_ERROR`. Future date rejected with 400 `FUTURE_DATE_NOT_ALLOWED` | None (the initial run was blocked at step 3 by `UATF-01`; resolved on retest) | PASS | `EV-UAT-02-a`, `EV-UAT-02-b`, `EV-UAT-02-c` |
+| UAT-03 | Siriwan (ปลวกแดง) | 2026-11-22 21:35 | Subtitle "(67)", commit `64c98f4` | Receipt into Bank Account 30,500 (Salary 30,000 + Interest 500); payment from Wallet 2,250.50 (Dining 450.50 + Groceries 1,800); payment from Credit Card 1,200 (Electricity 700 + Telecom 500); payment from Bank Account 4,000 (card repayment) | All 4 transactions created (201). Wallet went to −250.50 ฿ with the "Negative balance" label. The card charge counted as expense; the card repayment did not. Month net +27,049.50 ฿. Ending balances match | None | PASS | `EV-UAT-03-a`, `EV-UAT-03-b`, `EV-UAT-03-c` |
+| UAT-04 | Thanabun (ปลวกแดง) | 2026-11-22 21:35 | Subtitle "(67)", commit `64c98f4` | Allocation mismatch (500 vs 300); total 0; future date; Credit Card to Bank Account; Wallet to Wallet; receipt into Credit Card | Every invalid operation was rejected with 400: `INVALID_ALLOCATION_SUM`, `VALIDATION_ERROR`, `FUTURE_DATE_NOT_ALLOWED`, `INVALID_TARGET_ACCOUNT`, `INVALID_SOURCE_ACCOUNT`. Balances and history unchanged | None | PASS | `EV-UAT-04-a`, `EV-UAT-04-b` |
+| UAT-05 | Siriwan (ปลวกแดง) | 2026-11-22 21:35 | Subtitle "(67)", commit `64c98f4` | Re-login as Alice; History; detail of row 4; summary presets; invalid custom range | Balances persisted after re-login. History shows 7 rows newest first with correct split lines. Row 4 detail (`e7cb1266…`) shows Salary 30,000 ฿ and Interest 500 ฿. The invalid custom range returned 400 `VALIDATION_ERROR` ("from must not be later than to") | None | PASS | `EV-UAT-05-a`, `EV-UAT-05-b` |
+| UAT-06 | Thanabun (ปลวกแดง) | 2026-11-22 21:35 | Subtitle "(67)", commit `64c98f4` | Bob Wallet opening 0; Bob receipt 1,000 (Salary); Alice requests Bob's transaction | Bob starts at 0.00 on every account. Bob's 0 opening balance and 1,000.00 receipt saved (201). Alice requesting `/api/v1/transactions/<bob-id>` gets 404 `NOT_FOUND`. Alice's summary and history are unaffected | None | PASS | `EV-UAT-06-a`, `EV-UAT-06-b` |
+| UAT-07 | Siriwan (ปลวกแดง) | 2026-11-22 21:35 | Subtitle "(67)", commit `64c98f4` | Admin login; Admin requests accounts, transactions and summary; Alice requests `/admin/users` | Admin lands on `/admin/users` with no financial links. Admin gets 403 `FORBIDDEN` on accounts, transactions and `summary/income-expense`. Alice gets 403 `FORBIDDEN` on `/admin/users`. The admin users list has 3 users and no financial fields | None | PASS | `EV-UAT-07-a`, `EV-UAT-07-b` |
+| UAT-08 | Thanabun (ปลวกแดง) | 2026-11-22 21:35 | Subtitle "(67)", commit `64c98f4` | Admin disables self; Admin disables Bob; Bob's open session; Bob logs in; Admin re-enables Bob; Bob logs in again | Self-disable got 409 `CANNOT_DISABLE_SELF`. Disabling Bob succeeded (200). Bob's open session was revoked at once (401 `UNAUTHENTICATED`). Bob's login was rejected with the generic 401. After re-enable, Bob logs in; data and Wallet 1,000.00 ฿ intact | None | PASS | `EV-UAT-08-a`, `EV-UAT-08-b` |
+
+Initial run (16:15–16:25): UAT-02 was **BLOCKED** at step 3 by `UATF-01` (§7.2), found at 16:17. Because the cases share USER-A's ledger (§4.2), the whole sequence UAT-01 to UAT-08 was re-run after the reset; the rows above are that retest. The UAT Team's record gives no separate per-case results for the initial run.
+
+Product Team note on how the cases were executed (from the UAT Team's evidence log, §5 of their record; their verdicts are unchanged): the evidence items `EV-PRE-01` to `EV-UAT-08-b` are HTTP requests and responses timestamped 21:35:47–21:35:54, and the "(67)" marker was checked in the served JavaScript bundle. Steps that exist only in the browser UI (for example the disabled Save buttons and allocation messages in UAT-04, the two-tab check in UAT-02 steps 2–5, the client-side range message in UAT-05 step 7, and the disabled self-disable button in UAT-08 step 2) are not separately evidenced in their record.
 
 Figures seen at the key steps (write what the screen showed):
 
 | Checkpoint | Wallet | Bank Account | Credit Card | Income | Expenses | Net | History count |
 |---|---|---|---|---|---|---|---|
-| UAT-02 step 5 (after the rejected second opening balance) | | | | | | | |
-| UAT-03 step 4 (end of the normal journey) | | | | | | | |
-| UAT-04 steps 13–14 and 19 (after the rejected inputs) | | | | | | | |
-| UAT-06 step 8 (USER-A after USER-B's receipt) | | | | | | | |
-| UAT-08 step 8 (USER-B after re-enable) | | | | | | | |
+| UAT-02 step 5 (after the rejected second opening balance; the UAT Team recorded it after all three openings were saved) | 2,000.00 ฿ | 50,000.00 ฿ | 3,500.00 ฿ | 0.00 ฿ | 0.00 ฿ | 0.00 ฿ | 3 |
+| UAT-03 step 4 (end of the normal journey) | −250.50 ฿ (Negative balance) | 76,500.00 ฿ | 700.00 ฿ | +30,500.00 ฿ | 3,450.50 ฿ | +27,049.50 ฿ | 7 |
+| UAT-04 steps 13–14 and 19 (after the rejected inputs; the UAT Team recorded it as "steps 1–11") | −250.50 ฿ | 76,500.00 ฿ | 700.00 ฿ | +30,500.00 ฿ | 3,450.50 ฿ | +27,049.50 ฿ | 7 (unchanged) |
+| UAT-06 step 8 (USER-A after USER-B's receipt) | −250.50 ฿ | 76,500.00 ฿ | 700.00 ฿ | +30,500.00 ฿ | 3,450.50 ฿ | +27,049.50 ฿ | 7 (no USER-B data) |
+| UAT-08 step 8 (USER-B after re-enable) | 1,000.00 ฿ | 0.00 ฿ | 0.00 ฿ | +1,000.00 ฿ | 0.00 ฿ | +1,000.00 ฿ | 2 |
 
 Evidence: name screenshots `EV-UAT-NN-k` (case and step), with the time and the visible URL. Only the login page shows the version marker, so start each session (initial run and retest) with `EV-UAT-00`: the login page with the subtitle "(67)", the URL and the time. At minimum also capture:
 
@@ -341,21 +347,40 @@ Open a GitHub issue in `yakginmomo/pangtao` with the label `bug` and a title sta
 
 What severity means for acceptance: a **Critical** or **Major** defect blocks Sprint 1 acceptance until it is fixed, redeployed and independently retested by the UAT Team. A **Minor** defect is either fixed or explicitly accepted by the UAT Team as a documented known limitation.
 
+Finding received (sent through the agreed channel, no GitHub issue):
+
+| Field | Content |
+|---|---|
+| Issue ID | `UATF-01` |
+| Title | UAT-02 step 3: Alice user account contains unreset opening balances from 2026-11-18, blocking clean opening balance creation |
+| Product (owning team) | Pangtao, team ผิงโหด |
+| Reporter, team, date | Thanabun Tikaew and Siriwan, team ปลวกแดง, 2026-11-22 |
+| Tested version | Subtitle "(67)", commit `64c98f4fcd293fb67f0d32b1db75943dfbf2c749`, revision `pangtao-00006-cjx` |
+| Linked case / requirement | UAT-02 steps 1 and 3; §4.1 starting state; AC-04.1 |
+| Preconditions and data | Logged in as `alice@example.test`; §4.1 says to expect 0 transactions |
+| Steps to reproduce | Not given separately in the report; UAT-02 steps 1 and 3 |
+| Expected result | USER-A starts with no opening balances, so the Bank Account opening balance saves (UAT-02 step 3) |
+| Actual result | At 16:17 Alice already had opening balances from 18 Nov, so the save returned 409 `OPENING_BALANCE_EXISTS` and blocked UAT-02 step 3 |
+| Severity | Not given in the report; the Product Team classified it as Minor (operational) in §8 |
+| Evidence | `EV-UAT-02-a`, `EV-UAT-02-b`, `EV-UAT-02-c` (retest) |
+| Defect or enhancement | Not given in the report; the Product Team accepted it as a defect in the handoff (§8) |
+
 ### 7.3 Retest and acceptance record (Part D)
 
 Retest each corrected finding (one row per finding):
 
 | Issue ID | Original case and step | Corrected release (commit, subtitle marker) | Tester (name, team) | Date and time | Actual result | PASS / FAIL / BLOCKED | Evidence IDs |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| `UATF-01` | UAT-02 steps 1 and 3 | Same release, commit `64c98f4`, subtitle "(67)", revision `pangtao-00006-cjx`; no code change, the §4.1 reset was run on the deployed database | Thanabun (ปลวกแดง) | 2026-11-22 21:35 | Clean start (0.00 ฿, no opening balances). Bank Account, Wallet and Credit Card openings saved (201). Duplicate rejected (409 `OPENING_BALANCE_EXISTS`). Negative amount (400 `VALIDATION_ERROR`) and future date (400 `FUTURE_DATE_NOT_ALLOWED`) rejected | PASS | `EV-UAT-02-a`, `EV-UAT-02-b`, `EV-UAT-02-c` |
 
 | Item | Value |
 |---|---|
-| Release tested for the decision | Commit and subtitle marker given by the Product Team |
-| Cases re-run | Affected UAT ids, results and evidence IDs |
-| Open findings | Every finding not fixed, with severity; any Minor one accepted as a limitation is listed here with the UAT Team's reason |
-| Decision | **Accepted** / **Accepted with documented minor limitations** (list them) / **Not Accepted** (reasons) |
-| Recorded by | UAT Team names, date and time, release tested |
+| Release tested for the decision | Commit `64c98f4fcd293fb67f0d32b1db75943dfbf2c749`, subtitle "(67)", Cloud Run revision `pangtao-00006-cjx`, image digest `sha256:0c479894775aa1ac88e0aff965f1e59af94436193f422541f44397f7cb78ff45`. The UAT Team's record labels this release "`v0.1.0`"; in this repository `v0.1.0` is the Sprint 1 baseline `bec5575`, and `64c98f4` (untagged) is that baseline plus the Lab 5 changes in §1. The commit, revision and digest identify the release that was accepted |
+| Cases re-run | UAT-01 to UAT-08 on the reset database, 22 Nov 2026 21:35–21:40: all 8 PASS (evidence `EV-PRE-01`, `EV-UAT-00` to `EV-UAT-08-b`) |
+| Open findings | None. `UATF-01` closed, PASS on retest |
+| Decision | **Accepted** (8 of 8 PASS, 0 FAIL, 0 BLOCKED) |
+| Conditions / accepted minor limitations | None |
+| Recorded by | Thanabun Tikaew (67070501021) and Siriwan (67070501075), team ปลวกแดง, signed 22 Nov 2026 21:40 (Bangkok), release `64c98f4`, in their `acceptance.md` §1 (link above) |
 
 The decision cannot be **Accepted** or **Accepted with documented minor limitations** while any Critical or Major finding is open, any corrected finding has not passed its retest, or any case is BLOCKED; record **Not Accepted** with the reason instead. Only the UAT Team records this decision.
 
@@ -365,4 +390,4 @@ Every finding received from the UAT Team gets one row, including findings later 
 
 | Issue ID | Case and step | Classification (accepted defect / duplicate of # / not-defect / enhancement) | Reason (contract reference and evidence) | Severity | Owner | Fix (branch, PR, release) | Status | Disposition |
 |---|---|---|---|---|---|---|---|---|
-| | | | | | | | | |
+| `UATF-01` (sent by the UAT Team through the agreed channel, 22 Nov 2026; no GitHub issue) | UAT-02 steps 1 and 3 (the starting state also affects UAT-03 to UAT-08, which share USER-A's ledger, §4.2) | **Accepted defect** against our handoff (§4.1 starting state), not against the product code | §4.1 promises that USER-A starts with no transactions and that the Product Team resets before every session. The UAT Team saw Alice with opening balances recorded on 18 Nov (Bank Account 1,000.67 ฿, Wallet 127.00 ฿, Credit Card 20.00 ฿), so UAT-02 step 3 returned `409 OPENING_BALANCE_EXISTS`. That response is the correct behaviour for a second opening balance (F-04, `opening-balance.service.ts`); the data was not reset. Evidence: partner `EV-UAT-02-a`, and `EV-UAT-06-a` showing Bob clean. The §4.1 SQL does cover opening balances (they are `OPENING_BALANCE` rows in `transactions`), so the script is sufficient; it was not run after the 18 Nov data was created | Minor (operational): no wrong figure or Sprint 1 behaviour, workaround is the reset, but it blocks UAT-02 until retested | Product Team (Chawin, Supichaya) | No code change, branch or PR. The §4.1 reset was run on the production database before the retest | Closed | The UAT Team re-ran UAT-01 to UAT-08 on the reset database on 22 Nov 2026 at 21:35 (UAT-02 PASS, evidence `EV-UAT-02-a` to `EV-UAT-02-c` in their record). The acceptance decision is theirs and is recorded in their document |
