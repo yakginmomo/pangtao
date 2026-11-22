@@ -1,0 +1,42 @@
+{
+  "runId": "uat-2026-11-22T08-42-19-542Z",
+  "baseUrl": "https://sd3cdaba1-4d7hbszvwq-as.a.run.app",
+  "commit": "f371c232715f1185bc46b64ea28335639ae8eabf",
+  "startedAt": "2026-11-22T08:42:19.544Z",
+  "case01": {
+    "id": "70a597ec-5d8b-4481-9cdc-2089dc67695d",
+    "requestNo": "REQ-20261122-0001",
+    "status": "APPROVED"
+  },
+  "snapshot04": {
+    "requestId": "70a597ec-5d8b-4481-9cdc-2089dc67695d",
+    "requestNo": "REQ-20261122-0001",
+    "status": "APPROVED",
+    "updatedAt": "2026-11-22T08:42:25.701Z",
+    "histories": [
+      {
+        "id": "5f1f7baa-eefc-4c81-a716-f3c1c5acd83a",
+        "action": "SUBMITTED",
+        "actor": "oum.requester@cpe334.local",
+        "comment": null,
+        "createdAt": "2026-11-22T08:42:24.875Z"
+      },
+      {
+        "id": "ea63680f-9d15-4e1e-9d99-e96724d8256f",
+        "action": "APPROVED",
+        "actor": "t.reviewer@cpe334.local",
+        "comment": "Approved for UAT",
+        "createdAt": "2026-11-22T08:42:25.713Z"
+      }
+    ],
+    "commit": "f371c232715f1185bc46b64ea28335639ae8eabf",
+    "capturedAt": "2026-11-22T08:42:26.122Z"
+  },
+  "createdRequestNos": [
+    "REQ-20261122-0001",
+    "REQ-20261122-0002",
+    "REQ-20261122-0003",
+    "REQ-20261122-0004"
+  ],
+  "correctionNote": "REQ-20261122-0002 was created by the case input amount=10000000.00 that the handoff incorrectly marks as invalid; added so the cleanup list is complete."
+}
