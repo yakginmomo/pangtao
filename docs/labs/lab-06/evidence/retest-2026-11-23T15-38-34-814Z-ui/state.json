@@ -1,0 +1,33 @@
+{
+  "commit": "90e9facdaeb4ef8555c82aa6962bb3fb4f2baf9f",
+  "at": "2026-11-23T15:38:41.741Z",
+  "newId": "e19100e4-d942-4c6c-8fe1-9eba2e42c8ce",
+  "request": {
+    "id": "e19100e4-d942-4c6c-8fe1-9eba2e42c8ce",
+    "requestNo": "REQ-20261123-0005",
+    "title": "UAT-Fin-01 (UI retest)",
+    "amount": "1234567.89",
+    "category": "EQUIPMENT",
+    "description": "Test Amount value.",
+    "status": "PENDING",
+    "requesterId": "f967243b-5527-4378-b45a-99532f5152f5",
+    "assignedReviewerId": "7e47dab2-eaef-43d7-ba89-885251be0234",
+    "createdAt": "2026-11-23T15:38:45.828Z",
+    "updatedAt": "2026-11-23T15:38:45.828Z",
+    "requester": {
+      "id": "f967243b-5527-4378-b45a-99532f5152f5",
+      "email": "oum.requester@cpe334.local",
+      "name": "Oum Requester",
+      "role": "REQUESTER"
+    },
+    "assignedReviewer": {
+      "id": "7e47dab2-eaef-43d7-ba89-885251be0234",
+      "email": "t.reviewer@cpe334.local",
+      "name": "T Reviewer",
+      "role": "REVIEWER"
+    }
+  },
+  "created": [
+    "REQ-20261123-0005"
+  ]
+}
