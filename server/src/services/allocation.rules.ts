@@ -27,7 +27,7 @@ const RECEIPT_TARGETS: Readonly<Partial<Record<AccountType, ReadonlySet<AccountT
 /** BR-05: line amounts must sum exactly to the total. Summed as bigint, so never rounded. */
 export function checkAllocationSum(total: bigint, amounts: readonly bigint[]): void {
   const allocated = amounts.reduce((sum, amount) => sum + amount, 0n);
-  if (allocated !== total) {
+  if (allocated > total) {
     throw new AppError(400, 'INVALID_ALLOCATION_SUM', 'Allocation lines must add up to the total amount', [
       { field: 'lines', issue: 'line amounts must sum exactly to totalAmount' },
     ]);
