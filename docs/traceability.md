@@ -113,7 +113,7 @@ Actual tests and results for every Sprint 1 acceptance criterion. Automated test
 | AC-04.7 to AC-04.9 | TEST-04.7 to TEST-04.9 | A | `tests/api/opening-balance.api.test.ts` | PASS |
 | AC-04.10 | TEST-04.10 | A, E | `tests/api/opening-balance.api.test.ts` and `tests/e2e/opening-balance.spec.ts` | PASS at both levels; failing-first `968d5f9` |
 | AC-05.1 to AC-05.3 | TEST-05.1 to TEST-05.3 | A | `tests/api/transactions.api.test.ts` | PASS |
-| AC-05.4 | TEST-05.4 | U, A | `tests/unit/allocation.rules.test.ts` and `tests/api/transactions.api.test.ts` | PASS at both levels; failing-first `f3b0a32` |
+| AC-05.4 | TEST-05.4 | U, A | `tests/unit/allocation.rules.test.ts` and `tests/api/transactions.api.test.ts` | PASS at both levels; failing-first `f3b0a32`; extra API case for UAT finding CE-F-01 (#46, Lab 6 controlled exercise): a Bank payment with one line below the total leaves every balance unchanged, failing-first `d082577` |
 | AC-05.5 | TEST-05.5 | A | `tests/api/transactions.api.test.ts` | PASS |
 | AC-05.6 | TEST-05.6 | A | `tests/api/transactions.api.test.ts` | PASS; failing-first `f3b0a32` |
 | AC-05.7, AC-05.8 | TEST-05.7, TEST-05.8 | A | `tests/api/transactions.api.test.ts` | PASS |

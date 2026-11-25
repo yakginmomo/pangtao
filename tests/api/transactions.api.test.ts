@@ -193,6 +193,28 @@ describe('F-05 Payment and Charge (STS)', () => {
     expect(await aliceRows()).toEqual({ transactions: 0, lines: 0 });
   });
 
+  // Regression for UAT finding CE-F-01 (#46): the UAT Team's exact request, a single line below the total.
+  it('TEST-05.4 (AC-05.4): a Bank payment whose one line is below the total returns 400 and leaves every balance unchanged', async () => {
+    await openBank(5_000_000); // 50,000.00 THB
+    const rowsBefore = await aliceRows();
+    const balancesBefore = await balances(aliceToken);
+
+    const res = await asAlice(TRANSACTIONS_URL).send(
+      payment({
+        accountId: ids['Bank Account'],
+        txnDate: '2026-11-22',
+        totalAmount: 10_000, // 100.00 THB
+        memo: 'EXERCISE allocation mismatch',
+        lines: [{ targetAccountId: ids['Dining'], amount: 6_000 }], // 60.00 THB
+      })
+    );
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('INVALID_ALLOCATION_SUM');
+    expect(await aliceRows()).toEqual(rowsBefore);
+    expect(await balances(aliceToken)).toEqual(balancesBefore);
+  });
+
   it('TEST-05.5 (AC-05.5): zero allocation lines return 400 VALIDATION_ERROR and save nothing', async () => {
     const res = await asAlice(TRANSACTIONS_URL).send(
       payment({ accountId: ids['Bank Account'], totalAmount: 100_000, lines: [] })
