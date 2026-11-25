@@ -6,9 +6,9 @@ Change: **BR-10 backdate limit**. A Payment or Receipt may no longer be dated mo
 |---|---|
 | Team | ผิงโหด: Chawin (67070501012), Supichaya (67070501087) |
 | Repository | https://github.com/yakginmomo/pangtao |
-| Change request | GitHub Issue #__ (to be opened from §1) |
+| Change request | GitHub Issue #49 (text in §1) |
 | Contract revision | SRS v2.0 (BR-10); F-05 1.3, F-06 1.3, F-04 1.2; sprint README §2.4 and §5; traceability v2.0; System-Level SDS §7 |
-| Teammate review of the contract | **Pending**: PR #__ into `sprint-2-staging` (§6) |
+| Teammate review of the contract | PR #50 into `sprint-2-staging`, approved and merged before any test or code change (§6) |
 
 ## 0. Versions
 
@@ -91,7 +91,7 @@ Access is unchanged: only a logged-in `USER` may record a transaction, on their 
 | Configuration | **Not applicable** for a new variable: 90 is a constant (`BACKDATE_LIMIT_DAYS`), not an env var, so every instance enforces the same rule. `APP_TIMEZONE` continues to define "today" |
 | Money / precision | **Not applicable**: no amount is calculated differently |
 | Summaries (F-08), history (F-07) | **Not applicable** to their logic; they read whatever is saved. Covered by regression (§3) |
-| Test fixtures | `tests/e2e/transaction-history.spec.ts` posts `2026-01-25`–`27` through the API, so it **will fail** under the new rule: move its dates inside the window and keep its assertions (versioned in sprint README §5). API tests posting fixed November dates (`DATE = '2026-11-01'`, `'2026-11-22'`) pass now but expire after 90 days: switch them to `bangkokDate(-n)`. Fixtures written straight into the DB (`insertDemoLedger`, January dates) are unaffected and act as the "old rows still work" regression |
+| Test fixtures | `tests/e2e/transaction-history.spec.ts` posts `2026-01-25`–`27` through the API, so it **will fail** under the new rule: its dates move to today − 3 to today − 1, its two displayed-date assertions follow the new dates, and every other assertion is unchanged (versioned in sprint README §5). API tests posting fixed November dates (`DATE = '2026-11-01'`, `'2026-11-22'`) pass now but expire after 90 days: switch them to `bangkokDate(-n)`. Fixtures written straight into the DB (`insertDemoLedger`, January dates) are unaffected and act as the "old rows still work" regression |
 | UAT documents | Lab 6 `uat.md` uses dates T and M1 (≤ 31 days old), so its cases stay valid |
 
 ## 3. Behaviour that must stay unchanged, and the tests protecting it
@@ -106,7 +106,7 @@ Access is unchanged: only a logged-in `USER` may record a transaction, on their 
 | Allocation sum, source/target matrix, amount limits, archived rules | TEST-05.4–05.6, 05.10–05.13, TEST-06.3–06.5, 06.9–06.11 |
 | Atomicity: rejected request saves nothing | `aliceRows()` / balance assertions in every rejection test above |
 
-Full suite to run before and after: `npm run verify` (lint, type-check, unit + API with coverage gate, build, E2E); CI on the PR runs the same four jobs. No existing test is removed or weakened; the only revised test is the E2E fixture date change above.
+Full suite to run before and after: `npm run verify` (lint, type-check, unit + API with coverage gate, build, E2E); CI on the PR runs the same four jobs. No existing test is removed or weakened. Revised inputs only: the E2E fixture dates above, and the fixed `txnDate` values in `tests/api/transactions.api.test.ts` (`DATE`, the CE-F-01 case), which become relative to today so they stay inside the window.
 
 ## 4. Contract excerpts: old → new
 
@@ -127,11 +127,11 @@ Full suite to run before and after: `npm run verify` (lint, type-check, unit + A
 
 | Step | Evidence | Commit / PR |
 |---|---|---|
-| 1. Change request opened | §1 | Issue #__ |
-| 2. Contract revision committed | this branch | __ |
-| 3. Teammate reviews the contract **before code** | PR review text | PR #__ |
-| 4. Failing tests on the pre-change code (RED) | output on `41bb484` + test commit | __ |
-| 5. Implementation (GREEN) + regression run | `npm run verify` counts | __ |
+| 1. Change request opened | §1 | Issue #49, 25 Nov 2026 19:11 (Bangkok) |
+| 2. Contract revision committed | `docs/update-contract` | `fcbd92f`, 25 Nov 2026 19:13 |
+| 3. Teammate reviews the contract **before code** | PR review text | PR #50 approved 25 Nov 2026 20:29, merged as `c07b47d` at 20:30 |
+| 4. Failing tests on the pre-change code (RED) | output on `fcbd92f` (`server/`, `web/`, `prisma/` identical to `41bb484`) + test commit | `676e90c`, 25 Nov 2026 20:40 |
+| 5. Implementation (GREEN) + regression run | `npm run verify` counts (traceability §3, Lab 7 tested version) | fixtures `84dadca`, implementation `5b16bc7`: unit + API 137 passed, E2E 20 passed, 0 failed, 0 skipped |
 | 6. Reviewed PR → `sprint-2-staging` → release PR → `main` → deploy | CI runs, revision | __ |
 | 7. Post-deploy checks: T−91 rejected, T−90 accepted; Alice cannot reach Bob's record (404); Admin denied (403) | evidence IDs | __ |
 
@@ -139,4 +139,4 @@ Full suite to run before and after: `npm run verify` (lint, type-check, unit + A
 
 | Reviewer | Date | What was checked | Outcome |
 |---|---|---|---|
-| __ | __ | __ | __ |
+| Chawin (PR #50) | 25 Nov 2026 20:29 (Bangkok), before the test commit | Version SHAs; check order in `createTransaction` (ownership 404 → account types → date → allocation sum); T−90/T−91 boundary dates; fixture impact; the regression test IDs in §3 | Approved. Follow-ups done on the Part B branch: the two version-history rows rejoined their tables and the Issue is linked. The TEST-05.15 note (fill a complete, balanced payment so only the date can block the submit) is applied in the test |

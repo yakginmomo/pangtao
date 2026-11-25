@@ -19,6 +19,20 @@ export function isFutureDate(date: string, now: Date = new Date()): boolean {
   return date > bangkokToday(now);
 }
 
+/** BR-10 (f-05/f-06 1.3): Payments and Receipts may be dated at most 90 days before today. */
+export const BACKDATE_LIMIT_DAYS = 90;
+
+/** The earliest date a Payment or Receipt may have: Bangkok today minus BACKDATE_LIMIT_DAYS. */
+export function oldestAllowedDate(now: Date = new Date()): string {
+  const [year, month, day] = bangkokToday(now).split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day - BACKDATE_LIMIT_DAYS)).toISOString().slice(0, 10);
+}
+
+/** True when `date` (`YYYY-MM-DD`) is before oldestAllowedDate (T−91 and older). */
+export function isBeforeBackdateLimit(date: string, now: Date = new Date()): boolean {
+  return date < oldestAllowedDate(now);
+}
+
 /** `2026-11-01` → `01 Nov 2026`; parsed as UTC so the calendar day never shifts. */
 export function formatCalendarDate(date: string): string {
   return new Date(`${date}T00:00:00.000Z`).toLocaleDateString('en-GB', {

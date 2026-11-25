@@ -2,7 +2,7 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '../prisma.js';
 import { AppError } from '../middleware/error.middleware.js';
 import { satangToJson } from '../utils/money.util.js';
-import { isFutureDate } from '../utils/date.util.js';
+import { isBeforeBackdateLimit, isFutureDate } from '../utils/date.util.js';
 import { checkAllocationSum, checkPaymentAccounts, checkReceiptAccounts, RuleAccount } from './allocation.rules.js';
 import type { CreateTransactionBodyDto, ListTransactionsQueryDto } from '../schemas/transaction.schema.js';
 
@@ -133,6 +133,12 @@ export class TransactionService {
       if (isFutureDate(dto.txnDate)) {
         throw new AppError(400, 'FUTURE_DATE_NOT_ALLOWED', 'Date cannot be later than today in Bangkok time', [
           { field: 'txnDate', issue: 'date must not be later than today in Bangkok time' },
+        ]);
+      }
+      // BR-10 v2.0: after the ownership check, so another user's account stays 404 whatever the date.
+      if (isBeforeBackdateLimit(dto.txnDate)) {
+        throw new AppError(400, 'DATE_TOO_OLD', 'Date cannot be more than 90 days before today in Bangkok time', [
+          { field: 'txnDate', issue: 'date must not be more than 90 days before today in Bangkok time' },
         ]);
       }
 
