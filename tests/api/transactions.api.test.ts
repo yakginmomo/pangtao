@@ -391,6 +391,65 @@ describe('F-05 Payment and Charge (STS)', () => {
     expect(await aliceRows()).toEqual({ transactions: 0, lines: 0 });
   });
 
+  it('TEST-05.14 (AC-05.14): a Payment dated more than 90 days ago (Bangkok) returns 400 DATE_TOO_OLD and saves nothing; today − 90 is accepted', async () => {
+    await openBank(5_000_000); // 50,000.00 THB
+    const before = await balances(aliceToken);
+    const tooOld = bangkokDate(-91);
+    const oldest = bangkokDate(-90);
+    const bankPayment = (txnDate: string) =>
+      payment({
+        accountId: ids['Bank Account'],
+        txnDate,
+        totalAmount: 10_000, // 100.00 THB
+        lines: [{ targetAccountId: ids['Dining'], amount: 10_000 }],
+      });
+
+    // T−91: rejected, nothing saved, no balance moves.
+    const rejected = await asAlice(TRANSACTIONS_URL).send(bankPayment(tooOld));
+    expect(rejected.status).toBe(400);
+    expect(rejected.body.error.code).toBe('DATE_TOO_OLD');
+    expect(rejected.body.error.details[0].field).toBe('txnDate');
+    expect(await aliceRows()).toEqual({ transactions: 1, lines: 0 }); // the opening balance only
+    expect(await balances(aliceToken)).toEqual(before);
+
+    // Boundary: T−90 is inside the window.
+    const accepted = await asAlice(TRANSACTIONS_URL).send(bankPayment(oldest));
+    expect(accepted.status).toBe(201);
+    expect(accepted.body.transaction.txnDate).toBe(oldest);
+    const afterAccepted = await balances(aliceToken);
+    expect(afterAccepted['Bank Account']).toBe(4_990_000); // 49,900.00 THB
+    expect(afterAccepted['Dining']).toBe(10_000);
+
+    // A card charge (Loan Taken source) follows the same rule.
+    const card = await asAlice(TRANSACTIONS_URL).send(
+      payment({
+        accountId: ids['Credit Card'],
+        txnDate: tooOld,
+        totalAmount: 10_000, // 100.00 THB
+        lines: [{ targetAccountId: ids['Dining'], amount: 10_000 }],
+      })
+    );
+    expect(card.status).toBe(400);
+    expect(card.body.error.code).toBe('DATE_TOO_OLD');
+    expect(await aliceRows()).toEqual({ transactions: 2, lines: 1 });
+    expect(await balances(aliceToken)).toEqual(afterAccepted);
+
+    // Ownership is checked before the date: Bob gets 404 for Alice's account, whatever the date.
+    const asBob = (url: string) => post(url).set('Cookie', [`sid=${bobToken}`]);
+    const bob = await asBob(TRANSACTIONS_URL).send(
+      payment({
+        accountId: ids['Bank Account'],
+        txnDate: tooOld,
+        totalAmount: 10_000,
+        lines: [{ targetAccountId: bobIds['Dining'], amount: 10_000 }],
+      })
+    );
+    expect(bob.status).toBe(404);
+    expect(bob.body.error.code).toBe('NOT_FOUND');
+    expect(await aliceRows()).toEqual({ transactions: 2, lines: 1 });
+    expect(await countLedgerRows(seededUsers.bob.id)).toEqual({ transactions: 0, lines: 0 });
+  });
+
   describe('Contract §2.1: request handling and access', () => {
     it('an Administrator gets 403 and an anonymous caller 401, and nothing is saved', async () => {
       const body = payment({
@@ -754,6 +813,35 @@ describe('F-06 Received Money (STS)', () => {
       expect(res.body.error.code, target).toBe('INVALID_TARGET_ACCOUNT');
     }
     expect(await aliceRows()).toEqual({ transactions: 0, lines: 0 });
+  });
+
+  it('TEST-06.12 (AC-06.12): a Receipt dated more than 90 days ago (Bangkok) returns 400 DATE_TOO_OLD and saves nothing; today − 90 is accepted', async () => {
+    const before = await balances(aliceToken);
+    expect(before['Wallet']).toBe(0);
+    const walletReceipt = (txnDate: string) =>
+      receipt({
+        accountId: ids['Wallet'],
+        txnDate,
+        totalAmount: 100_000, // 1,000.00 THB
+        lines: [{ targetAccountId: ids['Salary'], amount: 100_000 }],
+      });
+
+    // T−91: rejected, nothing saved, no balance moves.
+    const rejected = await asAlice(TRANSACTIONS_URL).send(walletReceipt(bangkokDate(-91)));
+    expect(rejected.status).toBe(400);
+    expect(rejected.body.error.code).toBe('DATE_TOO_OLD');
+    expect(rejected.body.error.details[0].field).toBe('txnDate');
+    expect(await aliceRows()).toEqual({ transactions: 0, lines: 0 });
+    expect(await balances(aliceToken)).toEqual(before);
+
+    // Boundary: T−90 is inside the window.
+    const oldest = bangkokDate(-90);
+    const accepted = await asAlice(TRANSACTIONS_URL).send(walletReceipt(oldest));
+    expect(accepted.status).toBe(201);
+    expect(accepted.body.transaction.txnDate).toBe(oldest);
+    const after = await balances(aliceToken);
+    expect(after['Wallet']).toBe(100_000); // 1,000.00 THB
+    expect(after['Salary']).toBe(100_000); // 1,000.00 THB
   });
 
   describe('Contract §2.1: request handling and access', () => {
