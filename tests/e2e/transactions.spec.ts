@@ -1,5 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 import { PrismaClient } from '@prisma/client';
+import { bangkokToday } from '../../web/src/utils/date';
 
 // AC-01.10: the seed password comes from the local .env, never from source.
 const SEED_PASSWORD = process.env.SEED_DEFAULT_PASSWORD;
@@ -129,6 +130,53 @@ test.describe('F-05 Payment and Charge (STS)', () => {
     await expect(page.getByTestId('line-1')).toHaveCount(0);
     await expect(page.getByTestId('summary-remaining')).toHaveText('20.00 ฿');
     await expect(page.getByTestId('payment-submit')).toBeDisabled();
+  });
+
+  test('TEST-05.15 (AC-05.15): the date picker starts at today − 90, and an older typed date shows a field error and sends nothing', async ({
+    page,
+  }) => {
+    const daysAgo = (n: number) => bangkokToday(new Date(Date.now() - n * 86_400_000));
+    const posts: string[] = [];
+    page.on('request', (req) => {
+      if (req.method() === 'POST' && req.url().includes('/api/v1/transactions')) posts.push(req.url());
+    });
+
+    await loginAsAlice(page);
+    await page.goto('/transactions/new');
+
+    // A complete, balanced payment, so the date is the only thing that can stop the submit.
+    await page.getByTestId('payment-source').selectOption({ label: 'Wallet' });
+    await page.getByTestId('payment-total').fill('100');
+    await page.getByTestId('line-target-0').selectOption({ label: 'Dining' });
+    await page.getByTestId('line-amount-0').fill('100');
+    const submit = page.getByTestId('payment-submit');
+    await expect(submit).toBeEnabled();
+
+    const date = page.getByTestId('payment-date');
+    await expect(date).toHaveAttribute('min', daysAgo(90));
+    await expect(date).toHaveAttribute('max', bangkokToday());
+
+    // T−91 typed: field error, no request, still on the form.
+    await date.fill(daysAgo(91));
+    await submit.click();
+    await expect(page.getByTestId('payment-date-error')).toHaveText('Date cannot be more than 90 days ago.');
+    await expect(page).toHaveURL(/\/transactions\/new$/);
+    expect(posts).toHaveLength(0);
+
+    // T−90: the error clears and the payment is saved with that date.
+    await date.fill(daysAgo(90));
+    await expect(page.getByTestId('payment-date-error')).toHaveCount(0);
+    await submit.click();
+    await expect(page).toHaveURL(/^http:\/\/localhost:3000\/?$/);
+    expect(posts).toHaveLength(1);
+
+    const stored = await prisma.transaction.findMany({
+      where: { userId: await aliceUserId(), kind: 'PAYMENT' },
+      select: { txnDate: true, totalAmount: true },
+    });
+    expect(stored.map((t) => [t.txnDate.toISOString().slice(0, 10), t.totalAmount])).toEqual([
+      [daysAgo(90), 10_000n], // 100.00 THB
+    ]);
   });
 });
 

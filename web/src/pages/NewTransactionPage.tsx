@@ -13,7 +13,7 @@ import { Account, AccountType } from '../types/account.types';
 import { ApiErrorResponse } from '../types/auth.types';
 import { CreateTransactionInput } from '../types/transaction.types';
 import { formatSatang, parseThbToSatang } from '../utils/money';
-import { bangkokToday, isFutureDate } from '../utils/date';
+import { bangkokToday, isBeforeBackdateLimit, isFutureDate, oldestAllowedDate } from '../utils/date';
 import { colors, font, radius, space } from '../styles/theme';
 
 /** BR-04: 100,000,000.00 THB in integer satang. */
@@ -172,6 +172,7 @@ export const NewTransactionPage: React.FC = () => {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const today = bangkokToday();
+  const oldest = oldestAllowedDate();
   const config = MODE_CONFIG[mode];
   const testIdPrefix = mode === 'PAYMENT' ? 'payment' : 'receipt';
 
@@ -265,6 +266,10 @@ export const NewTransactionPage: React.FC = () => {
     if (!canSubmit || !source || totalSatang === null) return;
     if (isFutureDate(txnDate)) {
       setFieldErrors({ txnDate: 'Date cannot be later than today.' });
+      return;
+    }
+    if (isBeforeBackdateLimit(txnDate)) {
+      setFieldErrors({ txnDate: 'Date cannot be more than 90 days ago.' });
       return;
     }
     setFieldErrors({});
@@ -393,6 +398,7 @@ export const NewTransactionPage: React.FC = () => {
                     data-testid={`${testIdPrefix}-date`}
                     className={inputClass('txnDate')}
                     type="date"
+                    min={oldest}
                     max={today}
                     value={txnDate}
                     onChange={(event) => {

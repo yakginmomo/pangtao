@@ -176,7 +176,7 @@ Later features (account management, loans, transfers, edit and void, search, fav
 | SESSION_TTL_HOURS | 8 | Session lifetime |
 | COOKIE_SECURE | false (true in production) | Secure flag on the cookie |
 | BCRYPT_COST | 12 | Password hash cost |
-| APP_TIMEZONE | Asia/Bangkok | Defines today for BR-10 |
+| APP_TIMEZONE | Asia/Bangkok | Defines today for BR-10, including the 90-day Payment/Receipt lower limit (SRS v2.0). The 90 days are the code constant `BACKDATE_LIMIT_DAYS`, not an environment variable |
 | SEED_DEFAULT_PASSWORD | set locally, not committed | Password for seeded accounts |
 | LOG_LEVEL | info | Log verbosity (reserved; not read by the code yet) |
 | TRUST_PROXY | unset (1 on Cloud Run) | Proxy hops to trust for the client IP |

@@ -1,5 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 import { PrismaClient } from '@prisma/client';
+import { bangkokToday, formatCalendarDate } from '../../web/src/utils/date';
 
 // AC-01.10: the seed password comes from the local .env, never from source.
 const SEED_PASSWORD = process.env.SEED_DEFAULT_PASSWORD;
@@ -8,6 +9,13 @@ if (!SEED_PASSWORD) {
 }
 
 const ORIGIN = 'http://localhost:3000';
+
+// BR-10 v2.0 (f-05/f-06 1.3): Payments and Receipts must be within 90 days of today, so the
+// demo sequence is dated relative to today. The opening balance keeps a fixed old date (F-04 has no limit).
+const daysAgo = (n: number) => bangkokToday(new Date(Date.now() - n * 86_400_000));
+const SALARY_DATE = daysAgo(3);
+const CARD_DATE = daysAgo(2);
+const REPAYMENT_DATE = daysAgo(1);
 const prisma = new PrismaClient();
 
 async function loginAsAlice(page: Page): Promise<void> {
@@ -45,7 +53,7 @@ async function recordDemoLedger(page: Page): Promise<void> {
   await post('/api/v1/transactions', {
     kind: 'RECEIPT',
     accountId: id('Bank Account'),
-    txnDate: '2026-01-25',
+    txnDate: SALARY_DATE,
     totalAmount: 3_000_000, // 30,000.00 THB
     memo: 'January salary',
     lines: [{ targetAccountId: id('Salary'), amount: 3_000_000 }],
@@ -53,7 +61,7 @@ async function recordDemoLedger(page: Page): Promise<void> {
   await post('/api/v1/transactions', {
     kind: 'PAYMENT',
     accountId: id('Credit Card'),
-    txnDate: '2026-01-26',
+    txnDate: CARD_DATE,
     totalAmount: 120_000, // 1,200.00 THB
     memo: 'Dinner and groceries',
     lines: [
@@ -64,7 +72,7 @@ async function recordDemoLedger(page: Page): Promise<void> {
   await post('/api/v1/transactions', {
     kind: 'PAYMENT',
     accountId: id('Bank Account'),
-    txnDate: '2026-01-27',
+    txnDate: REPAYMENT_DATE,
     totalAmount: 80_000, // 800.00 THB
     lines: [{ targetAccountId: id('Credit Card'), amount: 80_000 }],
   });
@@ -94,7 +102,7 @@ test.describe('F-07 Transaction History (STS)', () => {
     await expect(page.getByTestId('history-counter')).toHaveText('Showing 1–4 of 4');
 
     // Newest first: repayment, card purchase, salary, opening balance.
-    await expect(rows.nth(0)).toContainText('27 Jan 2026');
+    await expect(rows.nth(0)).toContainText(formatCalendarDate(REPAYMENT_DATE));
     await expect(rows.nth(0)).toContainText('800.00 ฿');
     await expect(rows.nth(1)).toContainText('Dinner and groceries');
     await expect(rows.nth(1)).toContainText('Credit Card');
@@ -157,7 +165,7 @@ test.describe('F-07 Transaction History (STS)', () => {
     const detail = page.getByTestId('transaction-detail');
     await expect(detail).toContainText('Payment');
     await expect(detail).toContainText('Credit Card');
-    await expect(detail).toContainText('26 Jan 2026');
+    await expect(detail).toContainText(formatCalendarDate(CARD_DATE));
     await expect(detail).toContainText('1,200.00 ฿');
     await expect(detail).toContainText('Dinner and groceries');
     const lines = page.getByTestId('detail-line');

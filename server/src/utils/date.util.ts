@@ -36,6 +36,32 @@ export function isFutureDate(
 }
 
 /**
+ * BR-10 (SRS v2.0, f-05/f-06 1.3): a Payment or Receipt may be dated at most this many
+ * calendar days before today. A code constant, not configuration, so every instance
+ * enforces the same rule. Opening balances (F-04) are not limited.
+ */
+export const BACKDATE_LIMIT_DAYS = 90;
+
+/** The earliest accepted Payment/Receipt date: today in `timeZone` minus BACKDATE_LIMIT_DAYS. */
+export function oldestAllowedDate(
+  timeZone: string = DEFAULT_TIME_ZONE,
+  now: Date = new Date()
+): string {
+  const [year, month, day] = todayInTimeZone(timeZone, now).split('-').map(Number);
+  // Calendar-day arithmetic on a UTC date, so the result never depends on the server's zone.
+  return new Date(Date.UTC(year, month - 1, day - BACKDATE_LIMIT_DAYS)).toISOString().slice(0, 10);
+}
+
+/** True when `date` (`YYYY-MM-DD`) is before oldestAllowedDate: T−90 is false, T−91 is true. */
+export function isBeforeBackdateLimit(
+  date: string,
+  timeZone: string = DEFAULT_TIME_ZONE,
+  now: Date = new Date()
+): boolean {
+  return date < oldestAllowedDate(timeZone, now);
+}
+
+/**
  * The first and last calendar day of the month containing `now` in `timeZone`
  * (f-08 §2.1, AC-08.8). `to` is the month's last day, not today, so a request
  * without bounds covers the whole current month.

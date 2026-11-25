@@ -87,7 +87,7 @@ In Sprint 1 a Loan Taken (card) source accepts Expense lines only, and Loan Take
 | BR-07 | A saved transaction updates every affected balance exactly once per the matrix, atomically; a rejected transaction changes nothing. Balances are always derived from saved transactions. |
 | BR-08 | Income and expense summaries count only lines allocated to Income or Expense accounts; transfers, borrowing, lending, loan repayments and opening balances are excluded. |
 | BR-09 | A credit card purchase is an expense on the charge date; repaying the card is not an expense. |
-| BR-10 | A transaction date is a valid calendar date not later than today (Asia/Bangkok). |
+| BR-10 | A transaction date is a valid calendar date not later than today (Asia/Bangkok). A Payment or Receipt date must also be no more than 90 days before today (Asia/Bangkok): today − 90 days is accepted, today − 91 days is rejected. Opening-balance dates have only the not-later-than-today limit. (Revised in v2.0, Lab 7 change request; before v2.0 a Payment or Receipt could have any past date.) |
 | BR-11 | An account has at most one opening balance; only Cash, Loan Taken and Loan Given accounts can have one; it is dated and never counted as income. |
 | BR-12 | Voided transactions are excluded from balances and summaries but stay in history, marked as voided. |
 | BR-13 | A disabled user cannot log in, and their active sessions end immediately. |
