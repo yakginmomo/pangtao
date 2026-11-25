@@ -15,7 +15,8 @@ const ACCOUNTS_URL = '/api/v1/accounts';
 const TRANSACTIONS_URL = '/api/v1/transactions';
 
 // A fixed calendar date in the past, so fixtures never become "future".
-const DATE = '2026-11-01';
+// Relative to today: BR-10 v2.0 rejects Payments and Receipts dated more than 90 days ago.
+const DATE = bangkokDate(-1);
 
 interface AccountItem {
   id: string;
@@ -202,7 +203,7 @@ describe('F-05 Payment and Charge (STS)', () => {
     const res = await asAlice(TRANSACTIONS_URL).send(
       payment({
         accountId: ids['Bank Account'],
-        txnDate: '2026-11-22',
+        txnDate: bangkokDate(-3), // CE-F-01 used 2026-11-22; relative so it stays inside the 90-day window
         totalAmount: 10_000, // 100.00 THB
         memo: 'EXERCISE allocation mismatch',
         lines: [{ targetAccountId: ids['Dining'], amount: 6_000 }], // 60.00 THB
