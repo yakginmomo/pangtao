@@ -1,0 +1,12 @@
+{
+  "runId": "retest-2026-11-23T15-37-48-332Z",
+  "baseUrl": "https://sd3cdaba1-4d7hbszvwq-as.a.run.app",
+  "commit": "90e9facdaeb4ef8555c82aa6962bb3fb4f2baf9f",
+  "startedAt": "2026-11-23T15:37:48.333Z",
+  "tester": "Chawin (Pangtao UAT Team) - case owner UAT-PB-03 and UAT-PB-04",
+  "createdRequestNos": [
+    "REQ-20261123-0002",
+    "REQ-20261123-0003",
+    "REQ-20261123-0004"
+  ]
+}
