@@ -132,8 +132,8 @@ Full suite to run before and after: `npm run verify` (lint, type-check, unit + A
 | 3. Teammate reviews the contract **before code** | PR review text | PR #50 approved 25 Nov 2026 20:29, merged as `c07b47d` at 20:30 |
 | 4. Failing tests on the pre-change code (RED) | output on `fcbd92f` (`server/`, `web/`, `prisma/` identical to `41bb484`) + test commit | `676e90c`, 25 Nov 2026 20:40 |
 | 5. Implementation (GREEN) + regression run | `npm run verify` counts (traceability §3, Lab 7 tested version) | fixtures `84dadca`, implementation `5b16bc7`: unit + API 137 passed, E2E 20 passed, 0 failed, 0 skipped |
-| 6. Reviewed PR → `sprint-2-staging` → release PR → `main` → deploy | CI runs, revision | __ |
-| 7. Post-deploy checks: T−91 rejected, T−90 accepted; Alice cannot reach Bob's record (404); Admin denied (403) | evidence IDs | __ |
+| 6. Reviewed PR → `sprint-2-staging` → release PR → `main` → deploy | CI runs, revision | PR #51 approved 25 Nov 21:17 (CI run `45628663171` on `bfd5589`: 4/4 passed), merged as `72c8635`. Release PR #52 approved and merged 21:44 as `2dc3dc1` (CI run `45636816104` on `83a2276`: 4/4 passed; run `45636767079` cancelled, replaced by it). Deploy demo run `45637417725` (success) → Cloud Run revision **`pangtao-00009-cwz`**. Re-run on `2dc3dc1`, 26 Nov 01:20: unit + API 137 passed, E2E 20 passed, 0 failed, 0 skipped (`metrics.md` EV-C-03) |
+| 7. Post-deploy checks: T−91 rejected, T−90 accepted; another user's record is unreachable (404); Admin denied (403) | `EV-B-POST`, PD-1 to PD-6 | `pangtao-00009-cwz`, 26 Nov 2026 01:43 (Bangkok), synthetic seed accounts. PD-1 Alice payment dated 2026-08-27 (T−91) → 400 `DATE_TOO_OLD`, field `txnDate`. PD-2 dated 2026-08-28 (T−90) → 201, transaction `9193f0c4-b76c-46b2-a8d3-0ffa7c2178f2`, 1.00 THB Wallet → Dining. PD-3 Bob reads that transaction → 404 `NOT_FOUND` (re-run at 01:43:53; the first attempt sent an empty ID because of a script error and got 400 `VALIDATION_ERROR`). PD-4 Bob posts on Alice's Wallet at T−91 → 404, not 400. PD-5 Admin `GET /accounts` → 403. PD-6 anonymous → 401. All as expected |
 
 ## 6. Teammate review of the revised contract
 
