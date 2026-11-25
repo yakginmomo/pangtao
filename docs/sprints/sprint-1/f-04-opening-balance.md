@@ -1,6 +1,6 @@
 # F-04 Opening Balance: Engineering Contract
 
-Requirements: FR-10; BR-04, BR-10, BR-11, BR-14 · Depends on: F-03 · Contract version: 1.1 (see [version history](README.md#5-contract-version-history)) · Suggested branch: `feature/F-04-opening-balance`
+Requirements: FR-10; BR-04, BR-10, BR-11, BR-14 · Depends on: F-03 · Contract version: 1.2 (see [version history](README.md#5-contract-version-history)) · Suggested branch: `feature/F-04-opening-balance`
 
 Shared conventions, error codes and the Product Definition of Done are in [README.md](README.md).
 
@@ -25,7 +25,7 @@ Shared conventions, error codes and the Product Definition of Done are in [READM
 **Rules and validation**
 
 - **BR-04 (Valid Amounts)**: Amount must be an integer satang value $\ge 0$ and $\le 10,000,000,000$ ($100,000,000.00\text{ THB}$). An opening balance is the only transaction kind permitted to have an amount of 0.
-- **BR-10 (Calendar Date)**: Date must be a valid calendar date `YYYY-MM-DD` not later than today in Bangkok time (`Asia/Bangkok`).
+- **BR-10 (Calendar Date)**: Date must be a valid calendar date `YYYY-MM-DD` not later than today in Bangkok time (`Asia/Bangkok`). The 90-day lower limit that BR-10 adds for Payments and Receipts (SRS v2.0, F-05/F-06 1.3) does not apply: an opening balance may still have any past date, because it records a starting position that can predate the user's first transaction.
 - **BR-11 (Single Opening Balance & Allowed Account Types)**:
   - Only accounts of type `CASH`, `LOAN_TAKEN`, and `LOAN_GIVEN` can have an opening balance. Submissions for `INCOME` or `EXPENSE` accounts return `400 VALIDATION_ERROR`.
   - An account has at most one opening balance. A second submission returns `409 OPENING_BALANCE_EXISTS`.

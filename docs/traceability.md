@@ -42,7 +42,7 @@ AC and test IDs follow the convention AC-NN.k and TEST-NN.k, where NN is the fea
 | BR-07 | F-03, F-05, F-06 | 1 | AC-03.x, 05.x, 06.x · U, A |
 | BR-08 | F-08 | 1 | AC-08.x · U, A |
 | BR-09 | F-05, F-08 | 1 | AC-05.x, 08.x · A, E |
-| BR-10 | F-05, F-06 | 1 | AC-05.x, 06.x · U, A |
+| BR-10 | F-04, F-05, F-06 | 1 | AC-04.6, AC-05.8, AC-06.6 (future date) · U, A; v2.0 (Lab 7): AC-05.14 · U, A, AC-05.15 · E, AC-06.12 · A (90-day Payment/Receipt limit) |
 | BR-11 | F-04, F-12 | 1, 2 | AC-04.x · A; management in Sprint 2 |
 | BR-12 | F-13 | 2 | Contract in Sprint 2 · A; until then F-07 history lists non-voided transactions only (f-07 1.1) |
 | BR-13 | F-02 | 1 | AC-02.x · A |
@@ -76,6 +76,8 @@ Baseline v1.0 contains 25 FR, 16 BR and 10 NFR. Every one is mapped to a feature
 | v1.7 | 15 Nov 2026 | Lab 5 #23 (containerize): System-Level SDS §7 lists `APP_PORT` and the `GIT_SHA` default and marks `LOG_LEVEL` as reserved, and §8 now says `docker compose up -d` starts PostgreSQL only while `--profile app` adds the `migrate` job and the app container. NFR-05 evidence names the clean-clone container run, and §3 gains the Lab 5 #23 tested version. No requirement added or dropped | Teammate review, PR #32 (approved and merged) |
 | v1.8 | 15 Nov 2026 | Lab 5 #24 (CI): `.github/workflows/ci.yml` runs lint, type-check, build, unit and API tests with the coverage gate, E2E and the Docker build on pull requests. System-Level SDS §8 describes the four checks (E2E on every PR, not only the release PR); the deployment guide gains a CI row and section (pull-request runs test GitHub's merge commit; the run summary names failed and flaky tests), and the `TEST_DATABASE_URL` and `SEED_DEFAULT_PASSWORD` rows note the CI values. NFR-09 evidence names the CI gate. §3 gains the Lab 5 #24 tested version, and its #23 entry no longer says #31 tracks the P2028 failures. That error recurred on this branch and is addressed: the server's Prisma client waits up to 5 s instead of 2 s for a pooled connection (System-Level SDS §1), checked by `tests/api/transaction-wait.api.test.ts`; the CI runs on this PR show whether it recurs. No requirement added or dropped | Pending teammate review |
 | v1.9 | 17 Nov 2026 | Lab 5 #27 (repeatable release, Student Guide 7.7): the login subtitle changes so the second pipeline release is visible on the public URL. The deployment guide records the public URL, its running-commit row points to §6, and §6 gains the Cloud Run revision history and migration job checks. No requirement added or dropped | Pending teammate review |
+
+| v2.0 | 25 Nov 2026 | Lab 7 change request (Issue to be linked): BR-10 revised. A Payment or Receipt dated more than 90 days before today in Bangkok time is rejected with the new code 400 `DATE_TOO_OLD`; opening balances, summaries, history and rows already saved are unchanged. F-05 1.3 and F-06 1.3 add AC-05.14, AC-05.15 and AC-06.12 with TEST-05.14, TEST-05.15 and TEST-06.12; F-04 1.2 is wording only. Recorded before implementation. Impact analysis: `docs/labs/lab-07/change-impact.md`. No requirement added or dropped | Pending teammate review |
 
 All assumptions and decisions (A-01–A-04, D-01–D-07) are fully resolved and agreed by the team; zero open items remain.
 
@@ -122,6 +124,8 @@ Actual tests and results for every Sprint 1 acceptance criterion. Automated test
 | AC-05.10, AC-05.11 | TEST-05.10, TEST-05.11 | A | `tests/api/transactions.api.test.ts` | PASS |
 | AC-05.12 | TEST-05.12 | A | `tests/api/transactions.api.test.ts` | PASS; failing-first `f3b0a32` |
 | AC-05.13 | TEST-05.13 | U, A | `tests/unit/allocation.rules.test.ts` and `tests/api/transactions.api.test.ts` | PASS at both levels |
+| AC-05.14 | TEST-05.14 | U, A | `tests/unit/date.util.test.ts` (planned) and `tests/api/transactions.api.test.ts` | NOT YET IMPLEMENTED: contract v1.3 (Lab 7); red/green to be recorded in Part B |
+| AC-05.15 | TEST-05.15 | E | `tests/e2e/transactions.spec.ts` | NOT YET IMPLEMENTED: contract v1.3 (Lab 7); red/green to be recorded in Part B |
 | AC-06.1, AC-06.2 | TEST-06.1, TEST-06.2 | A | `tests/api/transactions.api.test.ts` | PASS |
 | AC-06.3 | TEST-06.3 | U, A | `tests/unit/allocation.rules.test.ts` and `tests/api/transactions.api.test.ts` | PASS at both levels; failing-first `ccac71a` |
 | AC-06.4 | TEST-06.4 | A | `tests/api/transactions.api.test.ts` | PASS; failing-first `ccac71a` |
@@ -131,6 +135,7 @@ Actual tests and results for every Sprint 1 acceptance criterion. Automated test
 | AC-06.9 | TEST-06.9 | A | `tests/api/transactions.api.test.ts` | PASS |
 | AC-06.10 | TEST-06.10 | A | `tests/api/transactions.api.test.ts` | PASS; failing-first `ccac71a` |
 | AC-06.11 | TEST-06.11 | U, A | `tests/unit/allocation.rules.test.ts` and `tests/api/transactions.api.test.ts` | PASS at both levels; failing-first `ccac71a` |
+| AC-06.12 | TEST-06.12 | A | `tests/api/transactions.api.test.ts` | NOT YET IMPLEMENTED: contract v1.3 (Lab 7); red/green to be recorded in Part B |
 | AC-07.1 to AC-07.3 | TEST-07.1 to TEST-07.3 | A | `tests/api/transaction-history.api.test.ts` | PASS |
 | AC-07.4 | TEST-07.4 | A | `tests/api/transaction-history.api.test.ts` | PASS; failing-first `4a8d6fe` (fails on the owner's 200 control, not on the missing route's 404) |
 | AC-07.5 | TEST-07.5, TEST-07.7 | A | `tests/api/transaction-history.api.test.ts` | PASS |
