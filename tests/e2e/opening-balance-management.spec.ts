@@ -78,6 +78,17 @@ test.describe('F-12 Opening Balance Management (STS)', () => {
     const save = page.getByTestId('opening-balance-save');
     await expect(save).toBeDisabled();
 
+    // PR #69 review: the same amount typed another way is not a change, so Save stays disabled
+    // and no PATCH (with an empty body) can be sent.
+    for (const sameAmount of ['50000', '50,000.00', '50000.0']) {
+      await amount.fill(sameAmount);
+      await expect(save, sameAmount).toBeDisabled();
+    }
+    await amount.press('Enter');
+    await expect(dialog).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    expect(patches).toHaveLength(0);
+
     await amount.fill('-1');
     await save.click();
     await expect(page.getByTestId('opening-balance-error')).toHaveText('Enter a valid amount in THB with at most 2 decimal places.');
