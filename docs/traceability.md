@@ -155,3 +155,31 @@ Actual tests and results for every Sprint 1 acceptance criterion. Automated test
 **Status by feature:** F-01 to F-08 are implemented, merged into `sprint-1-staging` (F-08 through PR #18) and released on `main` through the Sprint 1 release PR #20 (`bec5575`); F-07's TEST-07.4 passes, which completes F-01 AC-01.9. `sprint-2-staging` starts from that release. Lab 5 changes (from #22) target `sprint-2-staging` and reach `main` through the release pipeline (#27).
 
 **Where results are recorded:** in each feature PR description (tested commit, counts, AC-to-test table, failing-test and implementation commits) and, from Lab 5 #24, in the CI run on that PR (test summary on the run page). Earlier per-feature output files are in git history (sprint README §5, DoD 1.1).
+
+## 4. Sprint 2 verification results
+
+Actual tests and results for each Sprint 2 feature, in the same form as §3. Automated test names start with their test ID, so each row can be found by searching the file for the ID. The tested commit and the CI run are recorded in the feature's PR description (DoD 1.1); until a feature merges its row stays "not yet".
+
+### F-09 Account management (contract 1.0, Issue #57)
+
+**Tested version:** branch `feature/F-09-account-management` from `sprint-2-staging` at `f388bea` (merge of PR #65). Failing-test commit `eafc03c`; implementation commits at this PR's head (recorded in the F-09 PR description per DoD 1.1). Commands on the implementation tree (Docker `app` container stopped, so E2E used this branch's server): lint and both type-checks clean, `npm test` 148 passed, 0 failed, 0 skipped (16 files), service-layer line coverage 98.25%, build succeeded, `npx playwright test` 23 passed, 0 failed, 0 skipped, 0 flaky.
+
+**Failing-first.** At `eafc03c` the nine new API tests and the NFR-02 route-list test (TEST-01.7) failed on the pre-change code: the account requests returned 404 because `POST /accounts` and `PATCH /accounts/:id` did not exist. Two disclosures:
+
+- The unit half of TEST-09.2 (`tests/unit/account.rules.test.ts`) was added with the implementation, because before it a unit test could only fail on a missing import; AC-09.2 is shown failing first through its API test.
+- `eafc03c` spelled the new route-list entry `/api/v1/accounts`; the route table records the collection path as `/api/v1/accounts/` (as it does for the existing `GET`). The implementation commit corrects only that spelling; the expected access level (`USER`) and the method are unchanged.
+
+| AC | TEST | Level | Test file | Result |
+|---|---|---|---|---|
+| AC-09.1 | TEST-09.1 | A | `tests/api/account-management.api.test.ts` | PASS |
+| AC-09.2 | TEST-09.2 | U, A | `tests/unit/account.rules.test.ts` and `tests/api/account-management.api.test.ts` | PASS at both levels; failing-first `eafc03c` (API) |
+| AC-09.3 | TEST-09.3, and the parallel-create test (untagged) | A | `tests/api/account-management.api.test.ts` | PASS; failing-first `eafc03c` |
+| AC-09.4 | TEST-09.4 | A | `tests/api/account-management.api.test.ts` | PASS |
+| AC-09.5 | TEST-09.5 | A | `tests/api/account-management.api.test.ts` | PASS; failing-first `eafc03c` |
+| AC-09.6 | TEST-09.6 | A | `tests/api/account-management.api.test.ts` | PASS; failing-first `eafc03c` |
+| AC-09.7 | TEST-09.7 | A | `tests/api/account-management.api.test.ts` | PASS |
+| AC-09.8 | TEST-09.8; NFR-02 route list in TEST-01.7 | A | `tests/api/account-management.api.test.ts` and `tests/api/auth.api.test.ts` | PASS (TEST-09.8 opens with an owner control, so Bob's 404 is an ownership result) |
+| AC-09.9 | TEST-09.9 | E | `tests/e2e/accounts.spec.ts` | PASS locally; not yet run in CI |
+| AC-09.10 | TEST-09.10 | E | `tests/e2e/accounts.spec.ts` | PASS locally; not yet run in CI |
+
+**Status:** F-09 is implemented on its branch and all ten ACs pass locally. It is not merged into `sprint-2-staging`, not reviewed and not released.

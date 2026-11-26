@@ -94,11 +94,12 @@ Income and expense summaries read only lines whose target account type is Income
 | Transaction detail | /transactions/:id | User | One transaction with its allocation lines |
 | New transaction | /transactions/new | User | Pay and Receive tabs with an allocation-lines editor |
 | Summary | /summary | User | Income, expense and net for a date range |
+| Accounts | /accounts | User | Create, rename, archive and unarchive accounts (F-09) |
 | Users | /admin/users | Administrator | List users; enable or disable |
 
-Sprint 2 and 3 add Accounts, Loans, Favorites and Reports screens in the same navigation.
+Sprint 2 adds the Accounts screen (F-09) to the navigation; Sprint 2 and 3 add Loans, Favorites and Reports screens in the same way.
 
-**Navigation.** A top bar shows the brand, a role-based menu (User: Dashboard, Transactions, Summary; Administrator: Users), the current user’s name and Log out. A route guard sends unauthenticated visitors to /login and shows a Not permitted page for the wrong role. After login, a User lands on the Dashboard and an Administrator on Users.
+**Navigation.** A top bar shows the brand, a role-based menu (User: Dashboard, Accounts, History, Summary; Administrator: Users), the current user’s name and Log out. A route guard sends unauthenticated visitors to /login and shows a Not permitted page for the wrong role. After login, a User lands on the Dashboard and an Administrator on Users.
 
 **Shared behavior.**
 
@@ -124,6 +125,8 @@ Sprint 2 and 3 add Accounts, Loans, Favorites and Reports screens in the same na
 | POST /auth/logout | any logged-in | End session |
 | GET /auth/me | any logged-in | Current user |
 | GET /accounts | User | Own accounts with balances |
+| POST /accounts | User | Create an account (name, type, optional subtype) |
+| PATCH /accounts/:id | User | Rename, archive or unarchive an account |
 | POST /accounts/:id/opening-balance | User | Record opening balance |
 | POST /transactions | User | Create Payment or Receipt with lines |
 | GET /transactions | User | History |
@@ -141,13 +144,14 @@ Feature contracts give full request, response and error shapes.
 | Log in | Allow | Allow | Allow | Own credentials |
 | Log out, view current user | 401 | Allow | Allow | Own session |
 | View accounts and balances | 401 | Allow | 403 | Own accounts only |
+| Create, rename or archive an account | 401 | Allow | 403 | Own accounts only; another user's account returns 404 |
 | Record opening balance | 401 | Allow | 403 | Own accounts only |
 | Create or view transactions and history | 401 | Allow | 403 | Own records only; others return 404 |
 | View income and expense summary | 401 | Allow | 403 | Own data only |
 | List users | 401 | 403 | Allow | All users, non-financial fields only |
 | Enable or disable user | 401 | 403 | Allow, but not self | Any other user |
 
-Later features (account management, loans, transfers, edit and void, search, favorites, reports) follow the User rows; administrator user creation follows the Administrator rows. Access is default-deny, and hiding a control in the UI is never treated as authorization.
+Account management (F-09) follows the User rows, and so will the later features (loans, transfers, edit and void, search, favorites, reports); administrator user creation follows the Administrator rows. Access is default-deny, and hiding a control in the UI is never treated as authorization.
 
 ## 6. Authentication and session design
 
