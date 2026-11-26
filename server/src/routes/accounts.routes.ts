@@ -5,6 +5,7 @@ import { accountService } from '../services/account.service.js';
 import { openingBalanceService } from '../services/opening-balance.service.js';
 import {
   AccountIdSchema,
+  CorrectOpeningBalanceBodySchema,
   OpeningBalanceBodySchema,
 } from '../schemas/opening-balance.schema.js';
 import { CreateAccountBodySchema, UpdateAccountBodySchema } from '../schemas/account.schema.js';
@@ -70,6 +71,43 @@ router.post(
         req.user.id
       );
       res.status(201).json({ transaction });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/** PATCH /api/v1/accounts/:id/opening-balance — correct the amount or date (f-12 §2.1). */
+router.patch(
+  '/:id/opening-balance',
+  access('USER'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.user) {
+        throw new AppError(401, 'UNAUTHENTICATED', 'Authentication required');
+      }
+      const accountId = AccountIdSchema.parse(req.params.id);
+      const dto = CorrectOpeningBalanceBodySchema.parse(req.body);
+      const transaction = await openingBalanceService.correctOpeningBalance(accountId, dto, req.user.id);
+      res.status(200).json({ transaction });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/** POST /api/v1/accounts/:id/opening-balance/void — remove the opening balance by voiding it (f-12 §2.1). */
+router.post(
+  '/:id/opening-balance/void',
+  access('USER'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.user) {
+        throw new AppError(401, 'UNAUTHENTICATED', 'Authentication required');
+      }
+      const accountId = AccountIdSchema.parse(req.params.id);
+      const transaction = await openingBalanceService.removeOpeningBalance(accountId, req.user.id);
+      res.status(200).json({ transaction });
     } catch (error) {
       next(error);
     }
