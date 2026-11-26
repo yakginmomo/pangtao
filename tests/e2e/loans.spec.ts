@@ -171,7 +171,8 @@ test.describe('F-10 Loans (STS)', () => {
 
     // Lend: Payment tab, Bank Account → Loan to Bob from the Lend group.
     await page.getByTestId('payment-source').selectOption({ label: 'Bank Account' });
-    expect(await targetGroups(page, 'line-target-0')).toEqual(['Expenses', 'Loan repayment', 'Lend']);
+    // F-11 adds the Transfer to group after Lend (f-10 §2.2, f-11 §2.2).
+    expect(await targetGroups(page, 'line-target-0')).toEqual(['Expenses', 'Loan repayment', 'Lend', 'Transfer to']);
     await expect(page.getByTestId('line-target-0').locator('optgroup[label="Lend"] option', { hasText: 'Loan to Bob' })).toHaveCount(1);
     await page.getByTestId('payment-total').fill('2,000.00');
     await page.getByTestId('line-target-0').selectOption({ label: 'Loan to Bob' });
@@ -183,7 +184,8 @@ test.describe('F-10 Loans (STS)', () => {
     await page.getByTestId('record-payment-link').click();
     await page.getByTestId('tab-receipt').click();
     await page.getByTestId('receipt-source').selectOption({ label: 'Wallet' });
-    expect(await targetGroups(page, 'line-target-0')).toEqual(['Income', 'Repayment received', 'Borrow']);
+    // F-11 adds the Transfer from group after Borrow (f-10 §2.2, f-11 §2.2).
+    expect(await targetGroups(page, 'line-target-0')).toEqual(['Income', 'Repayment received', 'Borrow', 'Transfer from']);
     await expect(page.getByTestId('line-target-0').locator('optgroup[label="Borrow"] option', { hasText: 'Loan from Mom' })).toHaveCount(1);
     await page.getByTestId('receipt-total').fill('5,000.00');
     await page.getByTestId('line-target-0').selectOption({ label: 'Loan from Mom' });

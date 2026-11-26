@@ -29,12 +29,12 @@ type Mode = 'PAYMENT' | 'RECEIPT';
  * authoritative. A Loan Taken (card) source accepts Expense lines only (Q-1).
  */
 const PAYMENT_TARGETS: Partial<Record<AccountType, AccountType[]>> = {
-  CASH: ['EXPENSE', 'LOAN_TAKEN', 'LOAN_GIVEN'],
+  CASH: ['EXPENSE', 'LOAN_TAKEN', 'LOAN_GIVEN', 'CASH'],
   LOAN_TAKEN: ['EXPENSE'],
 };
 
 const RECEIPT_TARGETS: Partial<Record<AccountType, AccountType[]>> = {
-  CASH: ['INCOME', 'LOAN_GIVEN', 'LOAN_TAKEN'],
+  CASH: ['INCOME', 'LOAN_GIVEN', 'LOAN_TAKEN', 'CASH'],
 };
 
 interface ModeConfig {
@@ -65,7 +65,7 @@ const MODE_CONFIG: Record<Mode, ModeConfig> = {
     errorFallback: 'Unable to save the payment. Please try again.',
     emptyMessage: 'You have no active Cash or Credit Card account to pay from.',
     targetHint: 'Choose the account you paid from to see where the money can go.',
-    targetGroupLabel: { EXPENSE: 'Expenses', LOAN_TAKEN: 'Loan repayment', LOAN_GIVEN: 'Lend' },
+    targetGroupLabel: { EXPENSE: 'Expenses', LOAN_TAKEN: 'Loan repayment', LOAN_GIVEN: 'Lend', CASH: 'Transfer to' },
   },
   RECEIPT: {
     sourceTypes: ['CASH'],
@@ -77,7 +77,7 @@ const MODE_CONFIG: Record<Mode, ModeConfig> = {
     errorFallback: 'Unable to save the receipt. Please try again.',
     emptyMessage: 'You have no active Cash account to receive money into.',
     targetHint: 'Choose the Cash account that received the money to see where it can be allocated.',
-    targetGroupLabel: { INCOME: 'Income', LOAN_GIVEN: 'Repayment received', LOAN_TAKEN: 'Borrow' },
+    targetGroupLabel: { INCOME: 'Income', LOAN_GIVEN: 'Repayment received', LOAN_TAKEN: 'Borrow', CASH: 'Transfer from' },
   },
 };
 
@@ -257,13 +257,17 @@ export const NewTransactionPage: React.FC = () => {
     // Drop targets the new source cannot use (e.g. a card cannot repay itself).
     const nextSource = sources.find((a) => a.id === id);
     const nextAllowed = nextSource ? config.targets[nextSource.type] ?? [] : [];
-    setLines((current) =>
-      current.map((line) => {
+    // f-11 §2.2: a line whose target is now the source itself says why its target was cleared.
+    const errors: FieldErrors = {};
+    setLines(
+      lines.map((line, index) => {
         const target = accounts.find((a) => a.id === line.targetAccountId);
         const keep = target && target.id !== id && nextAllowed.includes(target.type);
+        if (target && target.id === id) errors[`lines.${index}.targetAccountId`] = 'Choose another account for this line.';
         return keep ? line : { ...line, targetAccountId: '' };
       })
     );
+    if (Object.keys(errors).length > 0) setFieldErrors(errors);
   };
 
   const submit = (event: React.FormEvent) => {
