@@ -268,3 +268,30 @@ TEST-10.9 needs "Alice with no loan accounts", but every seeded user owns a Cred
 | AC-11.8 | TEST-11.8 | E | `tests/e2e/transfers.spec.ts` | PASS locally (step as corrected in f-11 1.1) |
 
 **Status:** at the time of writing, F-11 is implemented on its branch and all eight ACs pass locally. It is not yet reviewed, merged into `sprint-2-staging` or released. The statuses and the tested commit are updated when it merges.
+
+### F-13 Edit and void transactions (contract 1.1, Issue #61)
+
+**Tested version:** branch `feature/F-13-edit-void` from `sprint-2-staging` at `df027a3` (merge of PR #68, F-11), so edits are checked against the Sprint 2 matrix (F-10 and F-11 merged first). Contract revision `3567cdb` (f-13 1.1, f-07 1.3, traceability v2.3); failing-test commit `972b5df`; implementation commit `49a8d81`. `npm run verify` on `49a8d81` (Docker `app` container stopped, so E2E used this branch's server): lint and both type-checks clean, 190 unit and API tests passed, 0 failed, 0 skipped (22 files), service-layer line coverage 98.61%, build succeeded, 31 E2E tests passed, 0 failed, 0 skipped. CI runs on the PR.
+
+**Failing-first.** At `972b5df`, on the pre-change code, every API test in `tests/api/edit-void.api.test.ts` failed because neither endpoint existed (404 where 200, 400, 403 or 409 was expected): TEST-13.1 to 13.8, plus the f-13 1.1 `updatedAt`/`createdAt` check and the malformed or unknown id check. TEST-13.3 and TEST-13.4 (unit) failed with `checkTransactionVersion is not a function`. TEST-01.7 failed because its route list expects both endpoints. All five E2E tests failed with the Edit and Void controls missing. Three disclosures:
+
+- TEST-13.9 (unit) already passed at `972b5df`: the balance engine skipped voided rows and read whatever lines are stored before F-13, so it is a regression guard. The API half of TEST-13.9 failed in its setup (the edit returned 404), not on the invariant.
+- In TEST-13.8, Bob's 404 matched at `972b5df` only because the route was missing; the test failed on the Administrator's expected 403. At `49a8d81` the 404 comes from the ownership check.
+- TEST-13.10 changed in `49a8d81`: at 360 px the line input is below the fold, so the test now scrolls it into view before checking it is in the viewport. The no-horizontal-overflow check is unchanged.
+
+**Existing tests changed with the history query (f-07 1.2, 1.3; f-13 §2.4).** In `49a8d81`, as listed in f-13 §2.4: TEST-07.1 (`total: 5`, the voided payment first with `voidedAt` set), TEST-07.2 (`total: 5`, items card charge and salary), TEST-07.3 (`voidedAt: null`; `ITEM_KEYS` gains `voidedAt`, `createdAt` and `updatedAt`), the past-the-end page (`total: 5`), the renamed "a voided transaction is returned by id, marked as voided (f-07 1.2)", and the index test's `EXPLAIN` without the voided filter (still `transactions_user_id_txn_date_created_at_idx`). The F-05 and F-06 tests pass unchanged on the shared validator.
+
+| AC | TEST | Level | Test file | Result |
+|---|---|---|---|---|
+| AC-13.1 | TEST-13.1 | A | `tests/api/edit-void.api.test.ts` | PASS; failing-first `972b5df` |
+| AC-13.2 | TEST-13.2 | A | `tests/api/edit-void.api.test.ts` | PASS; failing-first `972b5df` |
+| AC-13.3 | TEST-13.3 | U, A | `tests/unit/edit-void.rules.test.ts`, `tests/api/edit-void.api.test.ts` | PASS; failing-first `972b5df` |
+| AC-13.4 | TEST-13.4 | U, A | `tests/unit/edit-void.rules.test.ts`, `tests/api/edit-void.api.test.ts` | PASS; failing-first `972b5df` |
+| AC-13.5 | TEST-13.5 | A | `tests/api/edit-void.api.test.ts` | PASS; failing-first `972b5df` |
+| AC-13.6 | TEST-13.6 | A | `tests/api/edit-void.api.test.ts` | PASS; failing-first `972b5df` |
+| AC-13.7 | TEST-13.7 | A | `tests/api/edit-void.api.test.ts` | PASS; failing-first `972b5df` |
+| AC-13.8 | TEST-13.8 | A | `tests/api/edit-void.api.test.ts` | PASS; failing-first `972b5df` (on the Administrator case) |
+| AC-13.9 | TEST-13.9 | U, A | `tests/unit/edit-void.rules.test.ts`, `tests/api/edit-void.api.test.ts` | PASS; API failing-first `972b5df` (in setup); unit is a regression guard |
+| AC-13.10 | TEST-13.10 | E | `tests/e2e/edit-void.spec.ts` | PASS locally; failing-first `972b5df` |
+
+**Status:** at the time of writing, F-13 is implemented on its branch and all ten ACs pass locally. It is not yet reviewed, merged into `sprint-2-staging` or released, and it rebases after F-12 (PR #69) if that merges first. The statuses and the tested commit are updated when it merges.
