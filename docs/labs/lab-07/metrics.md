@@ -33,7 +33,7 @@ All times are Bangkok time (UTC+7).
 | #46 | [Lab6] CE-F-01: payment with lines summing below the total is saved | 25 Nov 14:21 | 25 Nov 19:11 | completed |
 | #49 | [Lab7 #1] BR-10: reject Payments and Receipts dated more than 90 days ago | 25 Nov 19:11 | **open** | — |
 
-Value: **3 completed**, 0 not planned, 0 duplicates. #27 and #28 are Lab 5 work closed late, inside this window. #49 is still open at the snapshot, although its implementation (PR #51) was released in PR #52 at 21:44.
+Value: **3 completed**, 0 not planned, 0 duplicates. #27 and #28 are Lab 5 work closed late, inside this window. #49 is still open at the snapshot, although its implementation (PR #51) was released in PR #52 at 21:44. After the snapshot it was closed at 26 Nov 00:05, before the post-deploy checks, and reopened at 01:54 so that it closes after them, as the action below requires; the snapshot value is unchanged.
 
 ## M-2 Merged PRs
 
@@ -95,7 +95,7 @@ $ npx playwright test --reporter=line
 | ID | Source | Opened | Severity | Resolution | Resolved | Status at snapshot |
 |---|---|---|---|---|---|---|
 | `UATF-01` | Partner UAT (team ปลวกแดง), UAT-02 step 3; reported through the agreed channel, no GitHub Issue | 22 Nov 16:17 | Minor (operational) | The §4.1 data reset was run on the deployed database (no code change); retest PASS on `64c98f4` / `pangtao-00006-cjx` | 22 Nov 21:35 | Closed (`uat.md` §7.3) |
-| CE-F-01 (#46) | Controlled exercise: defect reintroduced by PR #45 | 25 Nov 14:21 | — | PR #47: red `d082577`, green `adc801b`; released in PR #48 (`41bb484`) | 25 Nov 19:11 (Issue closed) | Closed |
+| CE-F-01 (#46) | Controlled exercise: defect reintroduced by PR #45; reported by the UAT Team on 24 Nov, Issue opened 25 Nov 14:21 | 25 Nov 14:21 | Major | PR #47: red `d082577`, green `adc801b`; released in PR #48 (`41bb484`, revision `pangtao-00008-dfl`) | 25 Nov 19:11 (Issue closed) | Closed. A UAT Team retest on the fixed revision is not recorded (`readiness.md` R-3) |
 
 Value: **2 opened, 2 resolved, 0 open.** CE-F-01 was injected on purpose, so it is not a defect that escaped into a release.
 
