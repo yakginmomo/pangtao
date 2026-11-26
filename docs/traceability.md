@@ -18,12 +18,12 @@ AC and test IDs follow the convention AC-NN.k and TEST-NN.k, where NN is the fea
 | FR-08 | F-03, F-08 | 1 | AC-03.x / TEST-03.x · U, A, E (accounts and balances API); AC-08.x / TEST-08.x · U, A, E (income/expense totals) |
 | FR-09 | F-09 | 2 | AC-09.1–09.10 / TEST-09.1–09.10 (F-09 1.0) · U, A, E |
 | FR-10 | F-04 | 1 | AC-04.x / TEST-04.x · U, A |
-| FR-11 | F-12 | 2 | AC-12.1–12.7 / TEST-12.1–12.7 (F-12 1.0) · A, E |
+| FR-11 | F-12 | 2 | AC-12.1–12.7 / TEST-12.1–12.7 (F-12 1.1) · A, E |
 | FR-12 | F-05 | 1 | AC-05.x / TEST-05.x · U, A, E |
 | FR-13 | F-06 | 1 | AC-06.x / TEST-06.x · U, A, E |
 | FR-14 | F-10 | 2 | AC-10.1–10.7, 10.10 / TEST-10.1–10.7, 10.10 (F-10 1.0) · U, A, E |
 | FR-15 | F-11 | 2 | AC-11.1–11.8 / TEST-11.1–11.8 (F-11 1.0) · U, A, E |
-| FR-16 | F-13 | 2 | AC-13.1–13.10 / TEST-13.1–13.10 (F-13 1.0) · U, A, E |
+| FR-16 | F-13 | 2 | AC-13.1–13.10 / TEST-13.1–13.10 (F-13 1.1) · U, A, E |
 | FR-17 | F-07 | 1 | AC-07.x / TEST-07.x · A, E |
 | FR-18 | F-14 | 3 | Contract in Sprint 3 · A |
 | FR-19 | F-15 | 3 | Contract in Sprint 3 · A |
@@ -44,7 +44,7 @@ AC and test IDs follow the convention AC-NN.k and TEST-NN.k, where NN is the fea
 | BR-09 | F-05, F-08 | 1 | AC-05.x, 08.x · A, E |
 | BR-10 | F-04, F-05, F-06; F-11 to F-13 | 1, 2 | AC-04.6, AC-05.8, AC-06.6 (future date) · U, A; v2.0 (Lab 7): AC-05.14 · U, A, AC-05.15 · E, AC-06.12 · A (90-day Payment/Receipt limit); Sprint 2: AC-11.7 (transfers), AC-12.2 (opening corrections: no 90-day limit), AC-13.3, 13.4 (edits: changed date checked, unchanged date kept) · U, A |
 | BR-11 | F-04, F-12 | 1, 2 | AC-04.x · A; AC-12.1, 12.3, 12.4 (F-12) · A |
-| BR-12 | F-13 | 2 | AC-13.5, 13.6 / TEST-13.5, 13.6, 13.10 (F-13 1.0) · A, E; until F-13 merges, F-07 history lists non-voided transactions only (f-07 1.2) |
+| BR-12 | F-13 | 2 | AC-13.5, 13.6 / TEST-13.5, 13.6, 13.10 (F-13 1.1) · A, E; until F-13 merges, F-07 history lists non-voided transactions only (f-07 1.2) |
 | BR-13 | F-02 | 1 | AC-02.x · A |
 | BR-14 | F-04, F-05, F-06 (archived rule), F-09 (lifecycle), F-10 to F-13 | 1, 2 | AC-04.10 · A, E; AC-05.12 / TEST-05.12 · A (archived source); AC-05.13 · U, A (archived target, BR-06); AC-06.10 / TEST-06.10 · A (archived receiving account); Sprint 2: AC-09.2 (subtype valid for type), AC-09.3 (unique names), AC-09.5 (type and subtype fixed), AC-09.6, 09.7 (archive and unarchive), AC-10.6, 11.5 (archived loan or Cash target), AC-12.5 (archived account's opening balance), AC-13.3, 13.4 (edits: newly chosen archived account rejected, archived account kept in the same role) · U, A |
 | BR-15 | F-15 | 3 | Contract in Sprint 3 · A |
@@ -79,6 +79,8 @@ Baseline v1.0 contains 25 FR, 16 BR and 10 NFR. Every one is mapped to a feature
 | v2.0 | 25 Nov 2026 | Lab 7 change request (Issue #49): BR-10 revised. A Payment or Receipt dated more than 90 days before today in Bangkok time is rejected with the new code 400 `DATE_TOO_OLD`; opening balances, summaries, history and rows already saved are unchanged. F-05 1.3 and F-06 1.3 add AC-05.14, AC-05.15 and AC-06.12 with TEST-05.14, TEST-05.15 and TEST-06.12; F-04 1.2 is wording only. Recorded before implementation. Impact analysis: `docs/labs/lab-07/change-impact.md`. No requirement added or dropped | Teammate review, PR #50 (approved and merged before implementation) |
 | v2.1 | 26 Nov 2026 | Sprint 2 contracts F-09 1.0 to F-13 1.0 and Sprint 2 README 1.0, recorded before implementation. **Requirement revision (narrowed), F-10 Q-1:** SRS §4 limited a Loan Taken (card) source to Expense lines "in Sprint 1", which left card lending and card-to-Cash moves open; v2.1 makes the Expense-only rule permanent, so every loan and transfer row uses a Cash source. The SRS §4 matrix table is unchanged. Contract revisions: F-05 1.4 and F-06 1.4 move the TEST-05.13/TEST-06.11 cases that the Sprint 2 rows make valid to TEST-11.1, TEST-11.2 and TEST-10.3; F-07 1.2 returns voided transactions in history from F-13 (BR-12), and F-13 §2.4 lists the F-07 tests whose expected values change with it. §1 maps every Sprint 2 AC to FR-04, 09, 11, 14, 15, 16, 21, BR-01, 02, 04, 05, 06, 07, 08, 10, 11, 12, 14, 16 and NFR-02, 03, 08. New error codes `ACCOUNT_NAME_EXISTS` and `TRANSACTION_VOIDED` (Sprint 2 README §2.6). No requirement added or dropped; no AC removed | Teammate review, PR #63 (changes requested twice, addressed, approved and merged) |
 | v2.2 | 27 Nov 2026 | F-11 1.1 (Sprint 2 README §6): TEST-11.8's Receive step corrected to receive into Bank Account from Wallet, so its expected balances (Bank 49,200.00, Wallet 800.00 THB) follow from SRS §4; 1.0's step moved the money the other way. §2.4 names the unit pair tables of TEST-05.13/TEST-06.11 and F-10 TEST-10.10's target-group list, which change with the matrix. Test specification only: no requirement, rule, AC or behaviour changes | Teammate review, PR for Issue #58 |
+| v2.3 | 27 Nov 2026 | F-13 1.1 and F-07 1.3 (Sprint 2 README §6, Sprint 1 README §5): history items and the transaction detail also return `createdAt`, and a void leaves `updatedAt` unchanged, so the "Edited" mark in F-13 §2.2 can be computed (`updatedAt` later than `createdAt`). Recorded before the F-13 tests. No requirement, AC or TEST added or dropped | Teammate review pending (F-13 PR, Issue #61) |
+| v2.4 | 27 Nov 2026 | F-12 1.1 (Sprint 2 README §6): removing an opening balance leaves `updated_at` unchanged, as a void does in f-13 1.1, so a removed opening balance that was never corrected is not marked "Edited"; a correction still changes it. TEST-12.3 asserts it. Recorded before the fix and its failing test. No requirement, AC or TEST added or dropped | Teammate review, F-13 PR #70 (changes requested) |
 
 All assumptions and decisions (A-01–A-04, D-01–D-07) are fully resolved and agreed by the team; zero open items remain.
 
@@ -268,7 +270,7 @@ TEST-10.9 needs "Alice with no loan accounts", but every seeded user owns a Cred
 
 **Status:** at the time of writing, F-11 is implemented on its branch and all eight ACs pass locally. It is not yet reviewed, merged into `sprint-2-staging` or released. The statuses and the tested commit are updated when it merges.
 
-### F-12 Opening balance management (contract 1.0, Issue #59)
+### F-12 Opening balance management (contract 1.1, Issue #59)
 
 **Tested version:** branch `feature/F-12-opening-balance-management` from `sprint-2-staging` at `df027a3` (merge of PR #68, F-11). Failing-test commit `dcf8042`; implementation commits `3ef345b` (both endpoints) and `46e2d27` (Dashboard actions and dialogs); review defect red `5d60992`, green `ec3dde5` (below). `npm run verify` on `ec3dde5` (Docker `app` container stopped, so E2E used this branch's server): lint and both type-checks clean, 182 unit and API tests passed, 0 failed, 0 skipped (21 files), service-layer line coverage 98.99%, build succeeded, 27 E2E tests passed, 0 failed, 0 skipped. CI runs on the PR.
 
@@ -299,4 +301,33 @@ The f-12 §5 DoD checks are the untagged tests "two parallel removes of the same
 
 **PR #69 review defect (f-12 §2.2).** In the edit dialog, Save compared the raw amount text with the pre-filled `50000.00`, while the request compared parsed satang, so retyping the same amount as `50000` enabled Save and sent `PATCH {}` (400 and a banner). Red `5d60992`: TEST-12.7 types `50000`, `50,000.00` and `50000.0` and expects Save to stay disabled and no PATCH after Enter; it failed on `46e2d27` with Save enabled for `50000`. Green `ec3dde5`: "unchanged" compares the parsed amount and the date, disables Save and stops submit, so a request always names a changed field.
 
+**F-13 PR #70 review defect (f-12 1.1).** With F-13, history and detail return voided rows and mark a transaction "Edited" when `updatedAt` is later than `createdAt`. The remove let Prisma's `@updatedAt` move `updated_at`, so a removed opening balance that was never corrected showed both "Voided on" and "Edited". Contract `9c9b9b1` (f-12 1.1, traceability v2.4); red `542c290`: TEST-12.3 failed with `expected 1795723472184 to be 1795723472178` on the `updatedAt` check; green `e2b78bc`: the remove writes the saved `updated_at`, as the F-13 void does. Fixed on the F-13 branch, after F-12 was merged.
+
 **Status:** at the time of writing, F-12 is implemented on its branch and all seven ACs pass locally. It is not yet reviewed, merged into `sprint-2-staging` or released. The statuses and the tested commit are updated when it merges.
+
+### F-13 Edit and void transactions (contract 1.1, Issue #61)
+
+**Tested version:** branch `feature/F-13-edit-void` from `sprint-2-staging` at `df027a3` (merge of PR #68, F-11), so edits are checked against the Sprint 2 matrix (F-10 and F-11 merged first). Contract revision `3567cdb` (f-13 1.1, f-07 1.3, traceability v2.3); failing-test commit `972b5df`; implementation commit `49a8d81`, where `npm run verify` passed (190 unit and API tests, 31 E2E). F-12 (PR #69) merged into `sprint-2-staging` meanwhile, and `40fc961` merges it into this branch (merged rather than rebased, so the commits above stay valid; conflicts only in the NFR-02 route list, System-Level SDS §3 and §5, and this section). `npm run verify` on `40fc961` (Docker `app` container stopped, so E2E used this branch's server): lint and both type-checks clean, 198 unit and API tests passed, 0 failed, 0 skipped (23 files), service-layer line coverage 98.71%, build succeeded, 32 E2E tests passed, 0 failed, 0 skipped. CI runs on the PR. After the PR #70 review: the F-12 fix above (`9c9b9b1`, `542c290`, `e2b78bc`) and `617a8b7`, where the edit form's date picker keeps `min` at T−90 and still shows a saved older date. `npm run verify` on `617a8b7`: lint and both type-checks clean, 198 unit and API tests passed, 0 failed, 0 skipped (23 files), service-layer line coverage 98.71%, build succeeded, 32 E2E tests passed, 0 failed, 0 skipped.
+
+**Failing-first.** At `972b5df`, on the pre-change code, every API test in `tests/api/edit-void.api.test.ts` failed because neither endpoint existed (404 where 200, 400, 403 or 409 was expected): TEST-13.1 to 13.8, plus the f-13 1.1 `updatedAt`/`createdAt` check and the malformed or unknown id check. TEST-13.3 and TEST-13.4 (unit) failed with `checkTransactionVersion is not a function`. TEST-01.7 failed because its route list expects both endpoints. All five E2E tests failed with the Edit and Void controls missing. Three disclosures:
+
+- TEST-13.9 (unit) already passed at `972b5df`: the balance engine skipped voided rows and read whatever lines are stored before F-13, so it is a regression guard. The API half of TEST-13.9 failed in its setup (the edit returned 404), not on the invariant.
+- In TEST-13.8, Bob's 404 matched at `972b5df` only because the route was missing; the test failed on the Administrator's expected 403. At `49a8d81` the 404 comes from the ownership check.
+- TEST-13.10 changed in `49a8d81`: at 360 px the line input is below the fold, so the test now scrolls it into view before checking it is in the viewport. The no-horizontal-overflow check is unchanged.
+
+**Existing tests changed with the history query (f-07 1.2, 1.3; f-13 §2.4).** In `49a8d81`, as listed in f-13 §2.4: TEST-07.1 (`total: 5`, the voided payment first with `voidedAt` set), TEST-07.2 (`total: 5`, items card charge and salary), TEST-07.3 (`voidedAt: null`; `ITEM_KEYS` gains `voidedAt`, `createdAt` and `updatedAt`), the past-the-end page (`total: 5`), the renamed "a voided transaction is returned by id, marked as voided (f-07 1.2)", and the index test's `EXPLAIN` without the voided filter (still `transactions_user_id_txn_date_created_at_idx`). The F-05 and F-06 tests pass unchanged on the shared validator.
+
+| AC | TEST | Level | Test file | Result |
+|---|---|---|---|---|
+| AC-13.1 | TEST-13.1 | A | `tests/api/edit-void.api.test.ts` | PASS; failing-first `972b5df` |
+| AC-13.2 | TEST-13.2 | A | `tests/api/edit-void.api.test.ts` | PASS; failing-first `972b5df` |
+| AC-13.3 | TEST-13.3 | U, A | `tests/unit/edit-void.rules.test.ts`, `tests/api/edit-void.api.test.ts` | PASS; failing-first `972b5df` |
+| AC-13.4 | TEST-13.4 | U, A | `tests/unit/edit-void.rules.test.ts`, `tests/api/edit-void.api.test.ts` | PASS; failing-first `972b5df` |
+| AC-13.5 | TEST-13.5 | A | `tests/api/edit-void.api.test.ts` | PASS; failing-first `972b5df` |
+| AC-13.6 | TEST-13.6 | A | `tests/api/edit-void.api.test.ts` | PASS; failing-first `972b5df` |
+| AC-13.7 | TEST-13.7 | A | `tests/api/edit-void.api.test.ts` | PASS; failing-first `972b5df` |
+| AC-13.8 | TEST-13.8 | A | `tests/api/edit-void.api.test.ts` | PASS; failing-first `972b5df` (on the Administrator case) |
+| AC-13.9 | TEST-13.9 | U, A | `tests/unit/edit-void.rules.test.ts`, `tests/api/edit-void.api.test.ts` | PASS; API failing-first `972b5df` (in setup); unit is a regression guard |
+| AC-13.10 | TEST-13.10 | E | `tests/e2e/edit-void.spec.ts` | PASS locally; failing-first `972b5df` |
+
+**Status:** at the time of writing, F-13 is implemented on its branch and all ten ACs pass locally. It includes F-12 through the merge `40fc961`. It is not yet reviewed, merged into `sprint-2-staging` or released. The statuses and the tested commit are updated when it merges.

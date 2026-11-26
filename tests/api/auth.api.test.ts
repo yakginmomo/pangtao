@@ -200,6 +200,9 @@ describe('F-01 Authentication and Authorization Foundation (STS)', () => {
         // F-12 (Sprint 2): correcting and removing an opening balance are User-only.
         { method: 'PATCH', path: '/api/v1/accounts/:id/opening-balance', access: 'USER' },
         { method: 'POST', path: '/api/v1/accounts/:id/opening-balance/void', access: 'USER' },
+        // F-13 (Sprint 2): edit and void are User-only.
+        { method: 'PATCH', path: '/api/v1/transactions/:id', access: 'USER' },
+        { method: 'POST', path: '/api/v1/transactions/:id/void', access: 'USER' },
       ])
     );
 

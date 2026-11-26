@@ -143,6 +143,13 @@ describe('F-12 Opening Balance Management (STS)', () => {
     await salary();
     expect((await correct(aliceToken, ids['Bank Account'], { amount: 5_500_000 })).status).toBe(200);
 
+    const beforeRemove = await prisma.transaction.findUniqueOrThrow({
+      where: { id: openingId },
+      select: { createdAt: true, updatedAt: true },
+    });
+    // The correction above is the only write that moves updated_at (f-12 1.1).
+    expect(beforeRemove.updatedAt.getTime()).toBeGreaterThan(beforeRemove.createdAt.getTime());
+
     const res = await remove(aliceToken, ids['Bank Account']);
     expect(res.status).toBe(200);
     expect(Object.keys(res.body.transaction).sort()).toEqual(VOID_FIELDS);
@@ -152,6 +159,10 @@ describe('F-12 Opening Balance Management (STS)', () => {
     // D-04: the row is voided, never deleted.
     const stored = await prisma.transaction.findUniqueOrThrow({ where: { id: openingId }, select: { voidedAt: true } });
     expect(stored.voidedAt).not.toBeNull();
+    // f-12 1.1: a remove does not move updated_at, so a corrected opening balance keeps its
+    // correction time and the detail page shows "Edited" only for a real correction.
+    const afterRemove = await prisma.transaction.findUniqueOrThrow({ where: { id: openingId }, select: { updatedAt: true } });
+    expect(afterRemove.updatedAt.getTime()).toBe(beforeRemove.updatedAt.getTime());
     const bank = (await accounts(aliceToken))['Bank Account'];
     expect(bank.balance).toBe(3_000_000); // only the 30,000.00 THB salary
     expect(bank.openingBalance).toBeNull();
@@ -160,6 +171,15 @@ describe('F-12 Opening Balance Management (STS)', () => {
     expect(reopened).not.toBe(openingId);
     expect((await accounts(aliceToken))['Bank Account'].balance).toBe(4_000_000);
     expect(await activeOpenings(ids['Bank Account'])).toBe(1);
+
+    // Never corrected: removing it leaves updated_at equal to created_at, so it is not "Edited".
+    expect((await remove(aliceToken, ids['Bank Account'])).status).toBe(200);
+    const removedNew = await prisma.transaction.findUniqueOrThrow({
+      where: { id: reopened },
+      select: { voidedAt: true, createdAt: true, updatedAt: true },
+    });
+    expect(removedNew.voidedAt).not.toBeNull();
+    expect(removedNew.updatedAt.getTime()).toBe(removedNew.createdAt.getTime());
   });
 
   it('TEST-12.4 (AC-12.4): correcting or removing where there is no active opening balance is 404 NOT_FOUND and changes nothing', async () => {

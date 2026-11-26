@@ -1,5 +1,5 @@
 /**
- * Ledger fixtures written straight to Postgres. Voided rows have no endpoint until F-13, and
+ * Ledger fixtures written straight to Postgres, so a fixture needs no API call (voided rows included), and
  * fixed dates keep expected figures stable. Every row respects the DB constraints and composite FKs.
  */
 import { AccountSubtype, AccountType, TransactionKind } from '@prisma/client';
