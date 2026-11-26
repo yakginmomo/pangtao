@@ -185,5 +185,6 @@ Sprint 1 README §4 applies, with these Sprint 2 values:
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 26 Nov 2026 | Initial Sprint 2 scope, shared decisions (S2-D1 to S2-D6), answers to Q-1 to Q-6, API overview, error codes, demonstration journey, build order and DoD, with contracts F-09 1.0 to F-13 1.0, all before implementation. The Sprint 2 matrix rows revise F-05 and F-06 to 1.4, and voided transactions in history revise F-07 to 1.2 (Sprint 1 README §5). |
+| F-11 1.1 | 27 Nov 2026 | Test-specification correction, recorded in the F-11 PR (#58) before the E2E test that uses it; no rule, AC or behaviour changes. TEST-11.8's Receive step named Wallet as the receiving account and Bank Account as the **Transfer from** target, which moves 200.00 THB from Bank into Wallet (SRS §4: a Receipt line to Cash lowers that account), giving Bank 48,800.00 and Wallet 1,200.00, while its expected result said Bank 49,200.00 and Wallet 800.00. The step now receives into Bank Account from Wallet, so the expected result holds unchanged. §2.4 also names the unit pair tables of TEST-05.13/TEST-06.11 and the F-10 TEST-10.10 target-group list, which change with the matrix; and the DoD notes that F-10 merged first (PR #67), so F-11 carries no rebase. No AC or TEST removed. |
 
-F-09 to F-13 are at version 1.0. Later revisions are recorded in this table and in the repository git history.
+F-09, F-10, F-12 and F-13 are at version 1.0; F-11 is at version 1.1. Later revisions are recorded in this table and in the repository git history.
