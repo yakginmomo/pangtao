@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from '../pages/LoginPage';
 import { DashboardPage } from '../pages/DashboardPage';
 import { AccountsPage } from '../pages/AccountsPage';
+import { LoansPage } from '../pages/LoansPage';
 import { AdminUsersPage } from '../pages/AdminUsersPage';
 import { NewTransactionPage } from '../pages/NewTransactionPage';
 import { TransactionHistoryPage } from '../pages/TransactionHistoryPage';
@@ -27,6 +28,14 @@ export const AppRouter: React.FC = () => {
         element={
           <ProtectedRoute allowedRole="USER">
             <AccountsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/loans"
+        element={
+          <ProtectedRoute allowedRole="USER">
+            <LoansPage />
           </ProtectedRoute>
         }
       />
