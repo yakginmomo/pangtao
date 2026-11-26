@@ -467,7 +467,9 @@ export const TransactionForm: React.FC<{ existing?: HistoryTransaction }> = ({ e
                     data-testid={`${testIdPrefix}-date`}
                     className={inputClass('txnDate')}
                     type="date"
-                    min={keepsSavedDate && existing.txnDate < oldest ? existing.txnDate : oldest}
+                    // An edit keeps a saved date older than T−90 as the value (S2-D6), but the picker
+                    // never offers other days before T−90, which submit would reject.
+                    min={oldest}
                     max={today}
                     value={txnDate}
                     onChange={(event) => {
