@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { AppShell } from '../components/AppShell';
 import { ErrorBanner } from '../components/ErrorBanner';
+import { Amount } from '../components/Amount';
 import { Icon } from '../components/Icon';
 import { OpeningBalanceDialog } from '../components/OpeningBalanceDialog';
 import { accountsQueryKey, fetchAccounts } from '../api/accounts.api';
@@ -112,34 +113,6 @@ const SUMMARY_NEGATIVE_COLOR = '#8B2525';
 const IconTile: React.FC<{ name: string; fg: string; size?: number }> = ({ name, fg, size = 1.75 }) => (
   <span style={{ display: 'inline-flex', flexShrink: 0, color: fg }}>
     <Icon name={name} size={size} />
-  </span>
-);
-
-const NegativeLabel: React.FC = () => (
-  <span
-    style={{
-      fontSize: font.size.xs,
-      fontWeight: font.weight.semibold,
-      color: '#8B2525',
-      backgroundColor: '#FBEAEA',
-      borderRadius: radius.full,
-      padding: '0.1rem 0.5rem',
-      whiteSpace: 'nowrap',
-    }}
-  >
-    Negative balance
-  </span>
-);
-
-const Amount: React.FC<{ satang: number; size: string; testId?: string }> = ({ satang, size, testId }) => (
-  <span style={{ display: 'inline-flex', alignItems: 'center', gap: space[2], flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-    <span
-      data-testid={testId}
-      style={{ fontSize: size, fontWeight: font.weight.bold, color: colors.textPrimary, fontVariantNumeric: 'tabular-nums' }}
-    >
-      {formatSatang(satang)}
-    </span>
-    {satang < 0 && <NegativeLabel />}
   </span>
 );
 

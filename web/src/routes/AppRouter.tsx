@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from '../pages/LoginPage';
 import { DashboardPage } from '../pages/DashboardPage';
+import { AccountsPage } from '../pages/AccountsPage';
 import { AdminUsersPage } from '../pages/AdminUsersPage';
 import { NewTransactionPage } from '../pages/NewTransactionPage';
 import { TransactionHistoryPage } from '../pages/TransactionHistoryPage';
@@ -18,6 +19,14 @@ export const AppRouter: React.FC = () => {
         element={
           <ProtectedRoute allowedRole="USER">
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/accounts"
+        element={
+          <ProtectedRoute allowedRole="USER">
+            <AccountsPage />
           </ProtectedRoute>
         }
       />

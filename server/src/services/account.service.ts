@@ -1,6 +1,9 @@
 import { AccountSubtype, AccountType, Prisma } from '@prisma/client';
 import { prisma } from '../prisma.js';
+import { AppError } from '../middleware/error.middleware.js';
 import { satangToJson } from '../utils/money.util.js';
+import type { CreateAccountBodyDto, UpdateAccountBodyDto } from '../schemas/account.schema.js';
+import { accountNameExistsError, mapDuplicateName } from './account.rules.js';
 
 export interface AccountView {
   id: string;
@@ -118,6 +121,78 @@ export class AccountService {
             : null,
         };
       });
+  }
+
+  /**
+   * F-09 / AC-09.1: create an account for the caller. The name check and the insert run in
+   * one transaction; the unique `(user_id, name)` index decides two concurrent creates (BR-14).
+   */
+  async createAccount(userId: string, dto: CreateAccountBodyDto): Promise<AccountView> {
+    try {
+      const created = await prisma.$transaction(async (tx) => {
+        await assertNameFree(tx, userId, dto.name);
+        return tx.account.create({
+          data: { userId, name: dto.name, type: dto.type, subtype: dto.subtype ?? null },
+          select: { id: true },
+        });
+      });
+      return await this.getAccountView(userId, created.id);
+    } catch (error) {
+      throw mapDuplicateName(error);
+    }
+  }
+
+  /**
+   * F-09 / AC-09.4 to AC-09.8: rename and/or archive or unarchive the caller's account. Another
+   * user's id is 404 (BR-01). Archiving never touches transactions, so the balance and history
+   * stay (BR-14); repeating the same change is accepted and changes nothing.
+   */
+  async updateAccount(userId: string, accountId: string, dto: UpdateAccountBodyDto): Promise<AccountView> {
+    try {
+      await prisma.$transaction(async (tx) => {
+        const account = await tx.account.findFirst({
+          where: { id: accountId, userId },
+          select: { id: true, name: true },
+        });
+        if (!account) {
+          throw new AppError(404, 'NOT_FOUND', 'Account not found');
+        }
+        if (dto.name !== undefined && dto.name !== account.name) {
+          await assertNameFree(tx, userId, dto.name);
+        }
+        await tx.account.update({
+          where: { id: account.id },
+          data: {
+            ...(dto.name !== undefined ? { name: dto.name } : {}),
+            ...(dto.isArchived !== undefined ? { isArchived: dto.isArchived } : {}),
+          },
+        });
+      });
+      return await this.getAccountView(userId, accountId);
+    } catch (error) {
+      throw mapDuplicateName(error);
+    }
+  }
+
+  /**
+   * One account in the `GET /accounts` shape, with its derived balance (f-09 §2.1). It runs after
+   * the write's transaction has committed and only shapes the response: every check already ran
+   * inside that transaction, so this read does not split the check-and-write unit.
+   */
+  private async getAccountView(userId: string, accountId: string): Promise<AccountView> {
+    const account = (await this.listAccounts(userId)).find((item) => item.id === accountId);
+    if (!account) {
+      throw new AppError(404, 'NOT_FOUND', 'Account not found');
+    }
+    return account;
+  }
+}
+
+/** BR-14: names are unique per user, compared exactly after trimming (the index is case-sensitive). */
+async function assertNameFree(tx: Prisma.TransactionClient, userId: string, name: string): Promise<void> {
+  const existing = await tx.account.findFirst({ where: { userId, name }, select: { id: true } });
+  if (existing) {
+    throw accountNameExistsError();
   }
 }
 

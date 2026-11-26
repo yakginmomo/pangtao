@@ -75,6 +75,7 @@ Internal server errors (HTTP 500) return a generic message and attach an `X-Requ
 | **404** | `NOT_FOUND` | Record does not exist or belongs to another user (BR-01, D-03). |
 | **409** | `CANNOT_DISABLE_SELF` | Administrator attempting to deactivate their own user account (BR-03). |
 | **409** | `OPENING_BALANCE_EXISTS` | Account already possesses an active opening balance (BR-11). |
+| **409** | `ACCOUNT_NAME_EXISTS` | Create or rename to a name the user already has; names are unique per user and case-sensitive (BR-14, F-09). |
 | **415** | `UNSUPPORTED_MEDIA_TYPE` | Mutating request with non-JSON Content-Type. |
 | **429** | `RATE_LIMITED` | Exceeded 10 failed login attempts within a 15-minute window. |
 | **500** | `INTERNAL_ERROR` | Uncaught server exception; sanitized generic response with request ID. |
