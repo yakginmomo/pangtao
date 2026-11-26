@@ -138,7 +138,7 @@ export class OpeningBalanceService {
     }
     const opening = await tx.transaction.findFirst({
       where: { userId, accountId, kind: 'OPENING_BALANCE', voidedAt: null },
-      select: { id: true },
+      select: { id: true, updatedAt: true },
     });
     if (!opening) throw NO_ACTIVE_OPENING();
     return opening;
@@ -175,14 +175,16 @@ export class OpeningBalanceService {
   /**
    * FR-11 / AC-12.3: remove the active opening balance by voiding it (S2-D1, D-04: never
    * deleted); F-04 can then record a new one. The void is a conditional update, so of two
-   * concurrent removes one succeeds and the other finds nothing active (404).
+   * concurrent removes one succeeds and the other finds nothing active (404). `updated_at`
+   * is left unchanged (f-12 1.1).
    */
   async removeOpeningBalance(accountId: string, userId: string): Promise<VoidedOpeningBalanceView> {
     return prisma.$transaction(async (tx) => {
       const opening = await this.activeOpening(tx, accountId, userId);
       const voided = await tx.transaction.updateMany({
         where: { id: opening.id, userId, voidedAt: null },
-        data: { voidedAt: new Date() },
+        // updated_at is kept (f-12 1.1, as in f-13 1.1), so only a correction marks it "Edited".
+        data: { voidedAt: new Date(), updatedAt: opening.updatedAt },
       });
       if (voided.count === 0) throw NO_ACTIVE_OPENING();
       const row = await tx.transaction.findUniqueOrThrow({
