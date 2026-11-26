@@ -28,6 +28,21 @@ export function oldestAllowedDate(now: Date = new Date()): string {
   return new Date(Date.UTC(year, month - 1, day - BACKDATE_LIMIT_DAYS)).toISOString().slice(0, 10);
 }
 
+/** `date` (`YYYY-MM-DD`) shifted by whole calendar days; UTC arithmetic, so no DST or timezone shift. */
+export function addCalendarDays(date: string, days: number): string {
+  const [year, month, day] = date.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+}
+
+/**
+ * Milliseconds from `now` until the next Bangkok midnight, when "today" changes (L7-01).
+ * Asia/Bangkok is UTC+7 all year (no daylight saving), so midnight there is 17:00 UTC.
+ */
+export function msUntilNextBangkokMidnight(now: Date = new Date()): number {
+  const tomorrow = addCalendarDays(bangkokToday(now), 1);
+  return new Date(`${tomorrow}T00:00:00+07:00`).getTime() - now.getTime();
+}
+
 /** True when `date` (`YYYY-MM-DD`) is before oldestAllowedDate (T−91 and older). */
 export function isBeforeBackdateLimit(date: string, now: Date = new Date()): boolean {
   return date < oldestAllowedDate(now);
