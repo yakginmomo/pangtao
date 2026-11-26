@@ -11,6 +11,7 @@ import { adminRouter } from './routes/admin.routes.js';
 import { accountsRouter } from './routes/accounts.routes.js';
 import { transactionsRouter } from './routes/transactions.routes.js';
 import { summaryRouter } from './routes/summary.routes.js';
+import { loansRouter } from './routes/loans.routes.js';
 import { healthRouter } from './routes/health.routes.js';
 import { testRouter } from './routes/test.routes.js';
 
@@ -89,6 +90,7 @@ export function createApp(options: AppOptions = {}) {
   mountRouter(app, '/api/v1/accounts', accountsRouter);
   mountRouter(app, '/api/v1/transactions', transactionsRouter);
   mountRouter(app, '/api/v1/summary', summaryRouter);
+  mountRouter(app, '/api/v1/loans', loansRouter);
   if (enableTestRoutes) {
     mountRouter(app, '/api/v1/test', testRouter);
   }

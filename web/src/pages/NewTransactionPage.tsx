@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppShell } from '../components/AppShell';
 import { ErrorBanner } from '../components/ErrorBanner';
@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { accountsQueryKey, fetchAccounts } from '../api/accounts.api';
 import { createTransaction, transactionsQueryKey } from '../api/transactions.api';
 import { summaryQueryKey } from '../api/summary.api';
+import { loansQueryKey } from '../api/loans.api';
 import { errorCode, errorMessage } from '../api/http';
 import { Account, AccountType } from '../types/account.types';
 import { ApiErrorResponse } from '../types/auth.types';
@@ -23,16 +24,17 @@ const MAX_AMOUNT_SATANG = 10_000_000_000;
 type Mode = 'PAYMENT' | 'RECEIPT';
 
 /**
- * BR-06 / BR-16, Sprint 1 matrices, mirrored from the server so the form only offers
- * valid choices. The server stays authoritative.
+ * BR-06 / BR-16 matrices (Sprint 2 README §2.2), mirrored from the server so the form only
+ * offers valid choices; the order is the order of the target groups. The server stays
+ * authoritative. A Loan Taken (card) source accepts Expense lines only (Q-1).
  */
 const PAYMENT_TARGETS: Partial<Record<AccountType, AccountType[]>> = {
-  CASH: ['EXPENSE', 'LOAN_TAKEN'],
+  CASH: ['EXPENSE', 'LOAN_TAKEN', 'LOAN_GIVEN'],
   LOAN_TAKEN: ['EXPENSE'],
 };
 
 const RECEIPT_TARGETS: Partial<Record<AccountType, AccountType[]>> = {
-  CASH: ['INCOME'],
+  CASH: ['INCOME', 'LOAN_GIVEN', 'LOAN_TAKEN'],
 };
 
 interface ModeConfig {
@@ -45,6 +47,8 @@ interface ModeConfig {
   errorFallback: string;
   emptyMessage: string;
   targetHint: string;
+  /** f-10 §2.2: what a line to each target type means on this form. */
+  targetGroupLabel: Partial<Record<AccountType, string>>;
 }
 
 const MODE_CONFIG: Record<Mode, ModeConfig> = {
@@ -61,6 +65,7 @@ const MODE_CONFIG: Record<Mode, ModeConfig> = {
     errorFallback: 'Unable to save the payment. Please try again.',
     emptyMessage: 'You have no active Cash or Credit Card account to pay from.',
     targetHint: 'Choose the account you paid from to see where the money can go.',
+    targetGroupLabel: { EXPENSE: 'Expenses', LOAN_TAKEN: 'Loan repayment', LOAN_GIVEN: 'Lend' },
   },
   RECEIPT: {
     sourceTypes: ['CASH'],
@@ -72,15 +77,8 @@ const MODE_CONFIG: Record<Mode, ModeConfig> = {
     errorFallback: 'Unable to save the receipt. Please try again.',
     emptyMessage: 'You have no active Cash account to receive money into.',
     targetHint: 'Choose the Cash account that received the money to see where it can be allocated.',
+    targetGroupLabel: { INCOME: 'Income', LOAN_GIVEN: 'Repayment received', LOAN_TAKEN: 'Borrow' },
   },
-};
-
-const TYPE_GROUP_LABEL: Record<AccountType, string> = {
-  CASH: 'Cash',
-  LOAN_TAKEN: 'Debts (repayment)',
-  LOAN_GIVEN: 'Owed to me',
-  INCOME: 'Income',
-  EXPENSE: 'Expenses',
 };
 
 interface LineDraft {
@@ -164,7 +162,9 @@ export const NewTransactionPage: React.FC = () => {
   const { refetchUser } = useAuth();
   const accountsQuery = useQuery({ queryKey: accountsQueryKey, queryFn: fetchAccounts });
 
-  const [mode, setMode] = useState<Mode>('PAYMENT');
+  // f-10 §2.2: the Loans page opens the form on a tab with ?tab=payment|receive.
+  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState<Mode>(() => (searchParams.get('tab') === 'receive' ? 'RECEIPT' : 'PAYMENT'));
   const [sourceId, setSourceId] = useState('');
   // null until the user picks a date: the default then follows today, even across midnight (L7-01).
   const [typedDate, setTypedDate] = useState<string | null>(null);
@@ -192,6 +192,7 @@ export const NewTransactionPage: React.FC = () => {
       await queryClient.invalidateQueries({ queryKey: accountsQueryKey });
       await queryClient.invalidateQueries({ queryKey: transactionsQueryKey });
       await queryClient.invalidateQueries({ queryKey: summaryQueryKey });
+      await queryClient.invalidateQueries({ queryKey: loansQueryKey });
       navigate('/');
     },
     onError: async (error) => {
@@ -497,7 +498,7 @@ export const NewTransactionPage: React.FC = () => {
                         >
                           <option value="">Choose an account</option>
                           {targetGroups.map((group) => (
-                            <optgroup key={group.type} label={TYPE_GROUP_LABEL[group.type]}>
+                            <optgroup key={group.type} label={config.targetGroupLabel[group.type] ?? group.type}>
                               {group.items.map((a) => (
                                 <option key={a.id} value={a.id}>
                                   {a.name}

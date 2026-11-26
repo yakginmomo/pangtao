@@ -12,16 +12,19 @@ export interface RuleAccount {
 }
 
 /**
- * BR-06 / BR-16, Sprint 1 matrices (srs §4): allowed source types, and for each source
- * type the allowed line target types.
+ * BR-06 / BR-16 matrices (srs §4, Sprint 2 README §2.2): allowed source types, and for each
+ * source type the allowed line target types. A Loan Taken (card) source accepts Expense lines
+ * only (srs v2.1, F-10 Q-1); every loan row uses a Cash source.
  */
 const PAYMENT_TARGETS: Readonly<Partial<Record<AccountType, ReadonlySet<AccountType>>>> = {
-  CASH: new Set<AccountType>(['EXPENSE', 'LOAN_TAKEN']), // spending, card or loan repayment
+  // spending; card or loan repayment; lending (F-10)
+  CASH: new Set<AccountType>(['EXPENSE', 'LOAN_TAKEN', 'LOAN_GIVEN']),
   LOAN_TAKEN: new Set<AccountType>(['EXPENSE']), // card charge
 };
 
 const RECEIPT_TARGETS: Readonly<Partial<Record<AccountType, ReadonlySet<AccountType>>>> = {
-  CASH: new Set<AccountType>(['INCOME']), // earnings
+  // earnings; repayment received and borrowing (F-10)
+  CASH: new Set<AccountType>(['INCOME', 'LOAN_GIVEN', 'LOAN_TAKEN']),
 };
 
 /** BR-05: line amounts must sum exactly to the total. Summed as bigint, so never rounded. */
@@ -80,7 +83,7 @@ export function checkPaymentAccounts(source: RuleAccount, targets: readonly Rule
 
 /**
  * BR-14, BR-16, BR-06: the receiving account must be an active Cash account, and each
- * line target (in line order) must be active, differ from the source, and be Income.
+ * line target (in line order) must be active, differ from the source, and be allowed for it.
  */
 export function checkReceiptAccounts(source: RuleAccount, targets: readonly RuleAccount[]): void {
   if (source.isArchived) {

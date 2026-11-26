@@ -71,9 +71,43 @@ function balanceQuery(userId: string) {
   `;
 }
 
+/** An account with its derived balance still in bigint satang, for callers that add balances (F-10). */
+export interface AccountBalance {
+  id: string;
+  name: string;
+  type: AccountType;
+  subtype: AccountSubtype | null;
+  isArchived: boolean;
+  balance: bigint;
+  opening: { id: string; totalAmount: bigint; txnDate: Date } | null;
+}
+
 export class AccountService {
   /** AC-03.1, AC-03.3: the caller's own accounts with derived balances (BR-01, BR-07). */
   async listAccounts(userId: string): Promise<AccountView[]> {
+    return (await this.listAccountBalances(userId)).map((account) => ({
+      id: account.id,
+      name: account.name,
+      type: account.type,
+      subtype: account.subtype,
+      isArchived: account.isArchived,
+      balance: satangToJson(account.balance),
+      openingBalance: account.opening
+        ? {
+            transactionId: account.opening.id,
+            amount: satangToJson(account.opening.totalAmount),
+            // DATE column arrives as UTC midnight; the calendar date is its ISO prefix.
+            date: account.opening.txnDate.toISOString().slice(0, 10),
+          }
+        : null,
+    }));
+  }
+
+  /**
+   * The caller's accounts in F-03 order with balances as bigint satang, so sums stay exact
+   * (NFR-03). `listAccounts` converts them at the API boundary; F-10 totals them first.
+   */
+  async listAccountBalances(userId: string): Promise<AccountBalance[]> {
     // One repeatable-read snapshot so accounts, balances and openings are mutually consistent.
     const { accounts, balances, openings } = await prisma.$transaction(
       async (tx) => {
@@ -110,15 +144,8 @@ export class AccountService {
         const opening = openingByAccount.get(account.id);
         return {
           ...account,
-          balance: satangToJson(balanceById.get(account.id) ?? 0n),
-          openingBalance: opening
-            ? {
-                transactionId: opening.id,
-                amount: satangToJson(opening.totalAmount),
-                // DATE column arrives as UTC midnight; the calendar date is its ISO prefix.
-                date: opening.txnDate.toISOString().slice(0, 10),
-              }
-            : null,
+          balance: balanceById.get(account.id) ?? 0n,
+          opening: opening ? { id: opening.id, totalAmount: opening.totalAmount, txnDate: opening.txnDate } : null,
         };
       });
   }

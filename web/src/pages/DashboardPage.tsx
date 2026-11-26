@@ -10,6 +10,7 @@ import { OpeningBalanceDialog } from '../components/OpeningBalanceDialog';
 import { accountsQueryKey, fetchAccounts } from '../api/accounts.api';
 import { transactionsQueryKey } from '../api/transactions.api';
 import { fetchSummary, summaryQueryKey } from '../api/summary.api';
+import { loansQueryKey } from '../api/loans.api';
 import { errorCode, errorMessage } from '../api/http';
 import { Account, AccountType, OpeningBalanceTransaction } from '../types/account.types';
 import { formatSatang, formatSignedSatang } from '../utils/money';
@@ -388,6 +389,8 @@ export const DashboardPage: React.FC = () => {
     void queryClient.invalidateQueries({ queryKey: accountsQueryKey });
     void queryClient.invalidateQueries({ queryKey: transactionsQueryKey });
     void queryClient.invalidateQueries({ queryKey: summaryQueryKey });
+    // An opening balance on a Loan Given or Loan Taken account moves the Loans page (f-10 §2.2).
+    void queryClient.invalidateQueries({ queryKey: loansQueryKey });
   };
 
   return (

@@ -7,6 +7,7 @@ import { Icon } from '../components/Icon';
 import { useAuth } from '../context/AuthContext';
 import { accountsQueryKey, createAccount, fetchAccounts, updateAccount } from '../api/accounts.api';
 import { transactionsQueryKey } from '../api/transactions.api';
+import { loansQueryKey } from '../api/loans.api';
 import { errorCode, errorMessage } from '../api/http';
 import { Account, AccountSubtype, AccountType, CreateAccountInput } from '../types/account.types';
 import { formatSatang } from '../utils/money';
@@ -103,6 +104,7 @@ const AccountRow: React.FC<{ account: Account }> = ({ account }) => {
       // Account names appear in history and the transaction form, so every dependent query refreshes.
       await queryClient.invalidateQueries({ queryKey: accountsQueryKey });
       await queryClient.invalidateQueries({ queryKey: transactionsQueryKey });
+      await queryClient.invalidateQueries({ queryKey: loansQueryKey });
       setRenaming(false);
       setConfirmingArchive(false);
       setServerError(null);
@@ -268,6 +270,7 @@ const NewAccountForm: React.FC<{ onCreated: () => void; onCancel: () => void }> 
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: accountsQueryKey });
       await queryClient.invalidateQueries({ queryKey: transactionsQueryKey });
+      await queryClient.invalidateQueries({ queryKey: loansQueryKey });
       onCreated();
     },
     onError: async (error) => {

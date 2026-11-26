@@ -198,3 +198,43 @@ Actual tests and results for each Sprint 2 feature, in the same form as §3. Aut
 The same mutation exposed a weak test. With only the unique-violation mapping disabled, the parallel-create test (two simultaneous creates) still passed, because the name check normally wins the race and returns the 409 itself, so that test does not prove the mapping. The mapping therefore moved into `account.rules.ts` as a pure function and is pinned by two deterministic tests: a unit test, and a test that takes the real error PostgreSQL raises for a duplicate `(user_id, name)` and passes it through the mapping. The mapping also now acts only on a violation whose target includes `name`; a unique violation on another key is returned unchanged. The parallel-create test stays as an end-to-end check, not as evidence for the mapping.
 
 **Status:** at the time of writing, PR #66 is open with CI passing on `fa7231e`; F-09 is not yet merged into `sprint-2-staging` and not released. The statuses and the tested commit are updated when it merges.
+
+### F-10 Loans (contract 1.0, Issue #60)
+
+**Tested version:** branch `feature/F-10-loans` from `sprint-2-staging` at `b0e8682` (merge of PR #66). Failing-test commit `0d5a7fb`; implementation commits `bd4fb87` (matrix rows, `GET /loans`) and `838d5c6` (Loans screen and form groups). `npm run verify` on `838d5c6` (Docker `app` container stopped, so E2E used this branch's server): lint and both type-checks clean, 163 unit and API tests passed, 0 failed, 0 skipped (18 files), service-layer line coverage 98.90%, build succeeded, 25 E2E tests passed, 0 failed, 0 skipped. CI runs on the PR.
+
+**Failing-first.** At `0d5a7fb`, on the pre-change code, the new matrix rows failed with `INVALID_TARGET_ACCOUNT` where 201 (API) or no error (unit) was expected: TEST-10.1, 10.2, 10.3 (U and A), 10.4, 10.5, 10.7 and 10.8. The NFR-02 route list (TEST-01.7) failed because `GET /api/v1/loans/` was not declared. Three disclosures:
+
+- TEST-10.6 (U and A) and the unit half of TEST-10.5 already passed at `0d5a7fb`. They assert that the card source, Loan Given sources, archived targets and the form-crossing rows stay rejected, and that the summary engine ignores loan lines (BR-08). Both held before F-10, so they are regression guards, not failing-first evidence.
+- TEST-10.5 and TEST-10.8 failed at `0d5a7fb` in their setup (the first loan transaction was rejected), not on the summary or on `GET /loans`. The mutation checks below show that TEST-10.8 checks the overview itself.
+- The E2E tests TEST-10.9 and TEST-10.10 were added with the screen in `838d5c6`, not before it. The DoD asks failing-first evidence for the rules (AC-10.1, 10.2, 10.3, 10.5, 10.8), which the API tests carry.
+
+**Existing tests changed with the matrix (f-05 1.4, f-06 1.4).** In `bd4fb87`, the same commit as the matrix change:
+
+- TEST-06.11 (API, `tests/api/transactions.api.test.ts`): the Credit Card target case is removed, as f-10 §2.4 lists; it is accepted borrowing and is asserted in TEST-10.3. The archived, self, Wallet and Dining cases stay; Wallet stays until F-11 (TEST-11.2).
+- TEST-05.13 and TEST-06.11 (unit, `tests/unit/allocation.rules.test.ts`): these loop over every source and target type against an expected matrix. The expected matrix now also accepts Cash → Loan Given (Payment) and Cash ← Loan Given / Loan Taken (Receipt), as AC-05.13 and AC-06.11 v1.4 state. Every pair is still asserted, and every other pair is still rejected. f-10 §2.4 names only the API case; the unit tables are recorded here.
+
+**Mutation checks.** Each rule in `loans.service.ts` was disabled, TEST-10.8 was run, and the file was restored from a saved copy. These runs are not commits.
+
+| AC | Rule disabled | Result with the rule disabled |
+|---|---|---|
+| AC-10.8 | Archived accounts with a zero balance no longer left out | FAIL: `owedToMe.items` has 2 items, expected 1 (`Old loan` listed) |
+| AC-10.8 | Total not summed (always 0) | FAIL: `expected +0 to be 150000` |
+| AC-10.8 | Loan Given accounts also listed under `owedByMe` | FAIL: `owedByMe.items` has 4 items, expected 3 |
+
+| AC | TEST | Level | Test file | Result |
+|---|---|---|---|---|
+| AC-10.1 | TEST-10.1 | U, A | `tests/unit/loans.rules.test.ts`, `tests/api/loans.api.test.ts` | PASS; failing-first `0d5a7fb` |
+| AC-10.2 | TEST-10.2 | U, A | `tests/unit/loans.rules.test.ts`, `tests/api/loans.api.test.ts` | PASS; failing-first `0d5a7fb` |
+| AC-10.3 | TEST-10.3 | U, A | `tests/unit/loans.rules.test.ts`, `tests/api/loans.api.test.ts` | PASS; failing-first `0d5a7fb` |
+| AC-10.4 | TEST-10.4 | A | `tests/api/loans.api.test.ts` | PASS |
+| AC-10.5 | TEST-10.5 | U, A | `tests/unit/loans.rules.test.ts`, `tests/api/loans.api.test.ts` | PASS; API failing-first `0d5a7fb` (in setup); unit is a BR-08 regression guard |
+| AC-10.6 | TEST-10.6 | U, A | `tests/unit/loans.rules.test.ts`, `tests/api/loans.api.test.ts` | PASS; regression guard (passed before F-10) |
+| AC-10.7 | TEST-10.7 | A | `tests/api/loans.api.test.ts` | PASS |
+| AC-10.8 | TEST-10.8; NFR-02 route list in TEST-01.7 | A | `tests/api/loans.api.test.ts`, `tests/api/auth.api.test.ts` | PASS; failing-first `0d5a7fb` (route list; TEST-10.8 in setup) and the mutation checks above |
+| AC-10.9 | TEST-10.9 | E | `tests/e2e/loans.spec.ts` | PASS locally |
+| AC-10.10 | TEST-10.10 | E | `tests/e2e/loans.spec.ts` | PASS locally |
+
+TEST-10.9 needs "Alice with no loan accounts", but every seeded user owns a Credit Card (Loan Taken). The test archives that zero-balance card for the empty-state step, which `GET /loans` then leaves out (f-10 §1), and unarchives it afterwards.
+
+**Status:** at the time of writing, F-10 is implemented on its branch and all ten ACs pass locally. It is not yet reviewed, merged into `sprint-2-staging` or released. The statuses and the tested commit are updated when it merges.
