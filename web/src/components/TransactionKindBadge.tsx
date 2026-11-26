@@ -36,3 +36,23 @@ export const TransactionKindBadge: React.FC<{ kind: TransactionKind }> = ({ kind
     </span>
   );
 };
+
+/** f-13 §2.2: a voided transaction's mark; the text carries the meaning, not the colour. */
+export const VoidedBadge: React.FC<{ testId: string }> = ({ testId }) => (
+  <span
+    data-testid={testId}
+    style={{
+      display: 'inline-block',
+      fontSize: font.size.xs,
+      fontWeight: font.weight.semibold,
+      padding: '0.1rem 0.5rem',
+      borderRadius: radius.full,
+      border: '1px solid #C9C2B6',
+      backgroundColor: '#EFECE6',
+      color: '#4A4540',
+      whiteSpace: 'nowrap',
+    }}
+  >
+    Voided
+  </span>
+);

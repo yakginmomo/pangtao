@@ -36,6 +36,15 @@ export const CreateTransactionBodySchema = z.discriminatedUnion('kind', [
 
 export type CreateTransactionBodyDto = z.infer<typeof CreateTransactionBodySchema>;
 
+/**
+ * PATCH /api/v1/transactions/:id (f-13 §2.1, S2-D4): the full new version, with the same field
+ * rules as POST but without `kind`, which is fixed; a body with `kind` or any other extra
+ * field is 400 VALIDATION_ERROR.
+ */
+export const UpdateTransactionBodySchema = TransactionFieldsSchema.strict();
+
+export type UpdateTransactionBodyDto = z.infer<typeof UpdateTransactionBodySchema>;
+
 /** GET /api/v1/transactions?limit&offset (f-07 §1): limit 1–100 (default 50), offset ≥ 0. */
 export const ListTransactionsQuerySchema = PaginationQuerySchema;
 

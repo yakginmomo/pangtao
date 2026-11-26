@@ -31,9 +31,11 @@ interface HistoryItem {
   totalAmount: number;
   memo: string | null;
   lines: HistoryLine[];
+  voidedAt: string | null;
 }
 
-const ITEM_KEYS = ['accountId', 'accountName', 'id', 'kind', 'lines', 'memo', 'totalAmount', 'txnDate'];
+// f-07 1.2 / 1.3 (F-13): items also carry voidedAt, createdAt and updatedAt.
+const ITEM_KEYS = ['accountId', 'accountName', 'createdAt', 'id', 'kind', 'lines', 'memo', 'totalAmount', 'txnDate', 'updatedAt', 'voidedAt'];
 const LINE_KEYS = ['amount', 'id', 'note', 'targetAccountId', 'targetAccountName'];
 
 describe('F-07 Transaction History (STS)', () => {
@@ -50,7 +52,7 @@ describe('F-07 Transaction History (STS)', () => {
     bobToken = await createTestSession(seededUsers.bob.id);
     adminToken = await createTestSession(seededUsers.admin.id);
     // Demo dataset: opening 50,000.00, salary 30,000.00, card 1,200.00 (700.00 + 500.00),
-    // repayment 800.00, plus one voided 5,000.00 payment that history must not list (f-07 1.1 §1).
+    // repayment 800.00, plus one voided 5,000.00 payment that history lists marked as voided (f-07 1.2).
     demo = await insertDemoLedger(seededUsers.alice.id);
   });
 
@@ -62,15 +64,17 @@ describe('F-07 Transaction History (STS)', () => {
     const res = await get(TRANSACTIONS_URL, aliceToken);
 
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ total: 4, limit: 50, offset: 0 });
+    expect(res.body).toMatchObject({ total: 5, limit: 50, offset: 0 });
     const items = res.body.items as HistoryItem[];
     expect(items.map((t) => t.id)).toEqual([
+      demo.voidedTransactionId, // 28 Jan, voided
       demo.repaymentTransactionId, // 27 Jan
       demo.cardChargeTransactionId, // 26 Jan
       demo.salaryTransactionId, // 25 Jan
       demo.openingTransactionId, // 1 Jan
     ]);
-    expect(items.map((t) => t.id)).not.toContain(demo.voidedTransactionId);
+    expect(items[0].voidedAt).not.toBeNull();
+    expect(items.slice(1).map((t) => t.voidedAt)).toEqual([null, null, null, null]);
 
     for (const item of items) {
       expect(Object.keys(item).sort()).toEqual(ITEM_KEYS);
@@ -79,7 +83,7 @@ describe('F-07 Transaction History (STS)', () => {
       }
     }
 
-    const [repayment, card, salary, opening] = items;
+    const [, repayment, card, salary, opening] = items;
     expect(repayment).toMatchObject({
       kind: 'PAYMENT',
       accountId: demo.ids['Bank Account'],
@@ -123,10 +127,10 @@ describe('F-07 Transaction History (STS)', () => {
     const page = await get(`${TRANSACTIONS_URL}?limit=2&offset=2`, aliceToken);
 
     expect(page.status).toBe(200);
-    expect(page.body).toMatchObject({ total: 4, limit: 2, offset: 2 });
+    expect(page.body).toMatchObject({ total: 5, limit: 2, offset: 2 });
     expect((page.body.items as HistoryItem[]).map((t) => t.id)).toEqual([
+      demo.cardChargeTransactionId,
       demo.salaryTransactionId,
-      demo.openingTransactionId,
     ]);
 
     const tooLarge = await get(`${TRANSACTIONS_URL}?limit=101`, aliceToken);
@@ -148,6 +152,7 @@ describe('F-07 Transaction History (STS)', () => {
       txnDate: '2026-01-26',
       totalAmount: 120_000, // 1,200.00 THB
       memo: 'Dinner and groceries',
+      voidedAt: null,
     });
     expect(txn.lines.map((l) => [l.targetAccountName, l.amount, l.note])).toEqual([
       ['Dining', 70_000, 'Team dinner'], // 700.00 THB
@@ -216,7 +221,7 @@ describe('F-07 Transaction History (STS)', () => {
 
     const pastEnd = await get(`${TRANSACTIONS_URL}?offset=10`, aliceToken);
     expect(pastEnd.status).toBe(200);
-    expect(pastEnd.body).toMatchObject({ items: [], total: 4, limit: 50, offset: 10 });
+    expect(pastEnd.body).toMatchObject({ items: [], total: 5, limit: 50, offset: 10 });
   });
 
   it('transactions tied on date and creation time page in a stable id order, each exactly once', async () => {
@@ -245,10 +250,11 @@ describe('F-07 Transaction History (STS)', () => {
     expect([first.body.items[0].id, second.body.items[0].id]).toEqual([highId, lowId]);
   });
 
-  it('a voided transaction is not returned by id (f-07 1.1 §1)', async () => {
+  it('a voided transaction is returned by id, marked as voided (f-07 1.2)', async () => {
     const res = await get(`${TRANSACTIONS_URL}/${demo.voidedTransactionId}`, aliceToken);
-    expect(res.status).toBe(404);
-    expect(res.body.error.code).toBe('NOT_FOUND');
+    expect(res.status).toBe(200);
+    expect(res.body.transaction.id).toBe(demo.voidedTransactionId);
+    expect(res.body.transaction.voidedAt).not.toBeNull();
   });
 
   it(`the history query uses ${HISTORY_INDEX} on a realistic ledger (f-07 §5)`, async () => {
@@ -269,7 +275,7 @@ describe('F-07 Transaction History (STS)', () => {
 
     const plan = await prisma.$queryRaw<Array<{ 'QUERY PLAN': string }>>`
       EXPLAIN SELECT id FROM transactions
-      WHERE user_id = ${seededUsers.alice.id}::uuid AND voided_at IS NULL
+      WHERE user_id = ${seededUsers.alice.id}::uuid
       ORDER BY txn_date DESC, created_at DESC, id DESC
       LIMIT 50 OFFSET 0`;
     expect(plan.map((row) => row['QUERY PLAN']).join('\n')).toContain(HISTORY_INDEX);

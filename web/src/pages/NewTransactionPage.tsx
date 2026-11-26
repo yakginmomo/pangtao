@@ -6,13 +6,12 @@ import { ErrorBanner } from '../components/ErrorBanner';
 import { Icon } from '../components/Icon';
 import { useAuth } from '../context/AuthContext';
 import { accountsQueryKey, fetchAccounts } from '../api/accounts.api';
-import { createTransaction, transactionsQueryKey } from '../api/transactions.api';
-import { summaryQueryKey } from '../api/summary.api';
-import { loansQueryKey } from '../api/loans.api';
+import { createTransaction, updateTransaction } from '../api/transactions.api';
+import { invalidateLedgerQueries } from '../api/ledger-cache';
 import { errorCode, errorMessage } from '../api/http';
 import { Account, AccountType } from '../types/account.types';
 import { ApiErrorResponse } from '../types/auth.types';
-import { CreateTransactionInput } from '../types/transaction.types';
+import { CreateTransactionInput, HistoryTransaction } from '../types/transaction.types';
 import { formatSatang, parseThbToSatang } from '../utils/money';
 import { addCalendarDays, BACKDATE_LIMIT_DAYS, isBeforeBackdateLimit, isFutureDate } from '../utils/date';
 import { useBangkokToday } from '../hooks/useBangkokToday';
@@ -94,6 +93,14 @@ type FieldErrors = Record<string, string>;
 let lineKeySeq = 0;
 const newLine = (): LineDraft => ({ key: ++lineKeySeq, targetAccountId: '', amount: '', note: '' });
 
+/** Satang as the plain THB text the inputs hold: `120000` → `1200.00`. */
+const satangToInput = (satang: number): string => formatSatang(satang).replace(/[,\s฿]/g, '');
+
+/** A version in the shape both forms compare and send, so "unchanged" means the same request. */
+function versionKey(v: { accountId: string; txnDate: string; totalAmount: number | null; memo: string | null; lines: Array<{ targetAccountId: string; amount: number | null; note: string | null }> }): string {
+  return JSON.stringify([v.accountId, v.txnDate, v.totalAmount, v.memo, v.lines.map((l) => [l.targetAccountId, l.amount, l.note])]);
+}
+
 /** A THB input as positive satang within BR-04, or null. */
 function positiveSatang(input: string): number | null {
   const satang = parseThbToSatang(input);
@@ -137,7 +144,7 @@ const FieldError: React.FC<{ id: string; message?: string }> = ({ id, message })
     </span>
   ) : null;
 
-const FormSkeleton: React.FC = () => (
+export const FormSkeleton: React.FC = () => (
   <div data-testid="transaction-form-skeleton" role="status" aria-live="polite" aria-label="Loading accounts" className="pt-card" style={cardStyle}>
     {[60, 85, 70].map((width) => (
       <span
@@ -156,7 +163,14 @@ const FormSkeleton: React.FC = () => (
 );
 
 /** f-05 §2.2 / f-06 §2.2: the Payment and Receive tabs of `/transactions/new`. */
-export const NewTransactionPage: React.FC = () => {
+export const NewTransactionPage: React.FC = () => <TransactionForm />;
+
+/**
+ * The Payment / Receive form. With `existing` it is the f-13 §2.2 edit form: pre-filled, kind
+ * fixed, the saved archived accounts kept in their roles and an unchanged old date accepted
+ * (S2-D6), and Save enabled only once the version differs from the saved one.
+ */
+export const TransactionForm: React.FC<{ existing?: HistoryTransaction }> = ({ existing }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { refetchUser } = useAuth();
@@ -164,13 +178,24 @@ export const NewTransactionPage: React.FC = () => {
 
   // f-10 §2.2: the Loans page opens the form on a tab with ?tab=payment|receive.
   const [searchParams] = useSearchParams();
-  const [mode, setMode] = useState<Mode>(() => (searchParams.get('tab') === 'receive' ? 'RECEIPT' : 'PAYMENT'));
-  const [sourceId, setSourceId] = useState('');
+  const [mode, setMode] = useState<Mode>(() =>
+    existing ? (existing.kind === 'RECEIPT' ? 'RECEIPT' : 'PAYMENT') : searchParams.get('tab') === 'receive' ? 'RECEIPT' : 'PAYMENT'
+  );
+  const [sourceId, setSourceId] = useState(existing?.accountId ?? '');
   // null until the user picks a date: the default then follows today, even across midnight (L7-01).
-  const [typedDate, setTypedDate] = useState<string | null>(null);
-  const [memo, setMemo] = useState('');
-  const [total, setTotal] = useState('');
-  const [lines, setLines] = useState<LineDraft[]>(() => [newLine()]);
+  const [typedDate, setTypedDate] = useState<string | null>(existing?.txnDate ?? null);
+  const [memo, setMemo] = useState(existing?.memo ?? '');
+  const [total, setTotal] = useState(existing ? satangToInput(existing.totalAmount) : '');
+  const [lines, setLines] = useState<LineDraft[]>(() =>
+    existing && existing.lines.length > 0
+      ? existing.lines.map((line) => ({
+          key: ++lineKeySeq,
+          targetAccountId: line.targetAccountId,
+          amount: satangToInput(line.amount),
+          note: line.note ?? '',
+        }))
+      : [newLine()]
+  );
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState<string | null>(null);
   // BR-10 window (f-05 §2.2 v1.3), recomputed when the Bangkok day changes while the form is open.
@@ -187,17 +212,21 @@ export const NewTransactionPage: React.FC = () => {
   }, [unauthenticated, refetchUser]);
 
   const mutation = useMutation({
-    mutationFn: (input: CreateTransactionInput) => createTransaction(input),
+    mutationFn: ({ kind, ...version }: CreateTransactionInput) =>
+      existing ? updateTransaction(existing.id, version) : createTransaction({ kind, ...version }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: accountsQueryKey });
-      await queryClient.invalidateQueries({ queryKey: transactionsQueryKey });
-      await queryClient.invalidateQueries({ queryKey: summaryQueryKey });
-      await queryClient.invalidateQueries({ queryKey: loansQueryKey });
-      navigate('/');
+      await invalidateLedgerQueries(queryClient);
+      navigate(existing ? `/transactions/${existing.id}` : '/');
     },
     onError: async (error) => {
-      if (errorCode(error) === 'UNAUTHENTICATED') {
+      const code = errorCode(error);
+      if (code === 'UNAUTHENTICATED') {
         await refetchUser();
+        return;
+      }
+      // f-13 §2.2: voided or gone meanwhile. Reloading the transaction makes the edit page show why.
+      if (existing && (code === 'TRANSACTION_VOIDED' || code === 'NOT_FOUND')) {
+        await invalidateLedgerQueries(queryClient);
         return;
       }
       // Map server details[].field (e.g. `lines.1.amount`) back onto the inputs.
@@ -212,10 +241,16 @@ export const NewTransactionPage: React.FC = () => {
   });
 
   const accounts: Account[] = accountsQuery.data ?? [];
-  const sources = accounts.filter((a) => !a.isArchived && config.sourceTypes.includes(a.type));
+  // S2-D6: an account archived since it was saved stays available, but only in its saved role.
+  const savedTargetIds = new Set(existing?.lines.map((line) => line.targetAccountId) ?? []);
+  const sources = accounts.filter(
+    (a) => (!a.isArchived || a.id === existing?.accountId) && config.sourceTypes.includes(a.type)
+  );
   const source = sources.find((a) => a.id === sourceId);
   const allowedTypes = source ? config.targets[source.type] ?? [] : [];
-  const targets = accounts.filter((a) => !a.isArchived && a.id !== sourceId && allowedTypes.includes(a.type));
+  const targets = accounts.filter(
+    (a) => (!a.isArchived || savedTargetIds.has(a.id)) && a.id !== sourceId && allowedTypes.includes(a.type)
+  );
 
   const totalSatang = positiveSatang(total);
   const lineSatang = lines.map((line) => positiveSatang(line.amount));
@@ -226,8 +261,29 @@ export const NewTransactionPage: React.FC = () => {
   const linesComplete = lines.every(
     (line, i) => lineSatang[i] !== null && targets.some((t) => t.id === line.targetAccountId)
   );
+  // f-13 §2.2: in edit mode, Save waits for a change, judged on the values that would be sent.
+  const draftVersion = (): string =>
+    versionKey({
+      accountId: sourceId,
+      txnDate,
+      totalAmount: totalSatang,
+      memo: memo.trim() || null,
+      lines: lines.map((line, i) => ({ targetAccountId: line.targetAccountId, amount: lineSatang[i], note: line.note.trim() || null })),
+    });
+  const changed =
+    !existing ||
+    draftVersion() !==
+      versionKey({
+        accountId: existing.accountId,
+        txnDate: existing.txnDate,
+        totalAmount: existing.totalAmount,
+        memo: existing.memo?.trim() || null,
+        lines: existing.lines.map((line) => ({ targetAccountId: line.targetAccountId, amount: line.amount, note: line.note?.trim() || null })),
+      });
+  // S2-D6: the saved date may stay even when it is now older than T−90.
+  const keepsSavedDate = existing !== undefined && txnDate === existing.txnDate;
   const canSubmit =
-    !!source && !!txnDate && totalSatang !== null && linesComplete && remaining === 0 && !mutation.isPending;
+    !!source && !!txnDate && totalSatang !== null && linesComplete && remaining === 0 && changed && !mutation.isPending;
 
   const clearErrors = () => {
     if (Object.keys(fieldErrors).length > 0) setFieldErrors({});
@@ -277,7 +333,7 @@ export const NewTransactionPage: React.FC = () => {
       setFieldErrors({ txnDate: 'Date cannot be later than today.' });
       return;
     }
-    if (isBeforeBackdateLimit(txnDate)) {
+    if (!keepsSavedDate && isBeforeBackdateLimit(txnDate)) {
       setFieldErrors({ txnDate: 'Date cannot be more than 90 days ago.' });
       return;
     }
@@ -317,16 +373,16 @@ export const NewTransactionPage: React.FC = () => {
       <div style={{ maxWidth: '760px', margin: '0 auto' }}>
         <p style={{ margin: 0, marginBottom: space[2], fontSize: font.size.sm }}>
           <Link
-            to="/"
+            to={existing ? `/transactions/${existing.id}` : '/'}
             className="pt-icon-link"
             style={{ color: colors.textSecondary, display: 'inline-flex', alignItems: 'center', gap: space[1] }}
           >
             <Icon name="arrow_back" size={1.125} />
-            <span>Back to dashboard</span>
+            <span>{existing ? 'Back to transaction' : 'Back to dashboard'}</span>
           </Link>
         </p>
         <h2 style={{ fontSize: font.size['2xl'], fontWeight: font.weight.semibold, color: colors.textPrimary, marginBottom: space[4] }}>
-          New transaction
+          {existing ? 'Edit transaction' : 'New transaction'}
         </h2>
 
         <div role="tablist" aria-label="Transaction type" style={{ display: 'flex', flexWrap: 'wrap', gap: space[2], marginBottom: space[5] }}>
@@ -336,6 +392,8 @@ export const NewTransactionPage: React.FC = () => {
             aria-selected={mode === 'PAYMENT'}
             data-testid="tab-payment"
             onClick={() => changeMode('PAYMENT')}
+            // f-13 §2.2: the kind of a saved transaction cannot change.
+            disabled={existing !== undefined}
             style={tabStyle(mode === 'PAYMENT')}
           >
             Payment
@@ -346,6 +404,8 @@ export const NewTransactionPage: React.FC = () => {
             aria-selected={mode === 'RECEIPT'}
             data-testid="tab-receipt"
             onClick={() => changeMode('RECEIPT')}
+            // f-13 §2.2: the kind of a saved transaction cannot change.
+            disabled={existing !== undefined}
             style={tabStyle(mode === 'RECEIPT')}
           >
             Receive
@@ -407,7 +467,7 @@ export const NewTransactionPage: React.FC = () => {
                     data-testid={`${testIdPrefix}-date`}
                     className={inputClass('txnDate')}
                     type="date"
-                    min={oldest}
+                    min={keepsSavedDate && existing.txnDate < oldest ? existing.txnDate : oldest}
                     max={today}
                     value={txnDate}
                     onChange={(event) => {
@@ -625,7 +685,13 @@ export const NewTransactionPage: React.FC = () => {
             )}
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: space[2], flexWrap: 'wrap' }}>
-              <button type="button" onClick={() => navigate('/')} disabled={mutation.isPending} style={secondaryButton}>
+              <button
+                type="button"
+                data-testid={existing ? 'edit-cancel' : undefined}
+                onClick={() => navigate(existing ? `/transactions/${existing.id}` : '/')}
+                disabled={mutation.isPending}
+                style={secondaryButton}
+              >
                 Cancel
               </button>
               <button

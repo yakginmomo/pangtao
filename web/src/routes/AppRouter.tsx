@@ -8,6 +8,7 @@ import { AdminUsersPage } from '../pages/AdminUsersPage';
 import { NewTransactionPage } from '../pages/NewTransactionPage';
 import { TransactionHistoryPage } from '../pages/TransactionHistoryPage';
 import { TransactionDetailPage } from '../pages/TransactionDetailPage';
+import { EditTransactionPage } from '../pages/EditTransactionPage';
 import { SummaryPage } from '../pages/SummaryPage';
 import { ProtectedRoute } from './ProtectedRoute';
 
@@ -52,6 +53,14 @@ export const AppRouter: React.FC = () => {
         element={
           <ProtectedRoute allowedRole="USER">
             <TransactionHistoryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/transactions/:id/edit"
+        element={
+          <ProtectedRoute allowedRole="USER">
+            <EditTransactionPage />
           </ProtectedRoute>
         }
       />

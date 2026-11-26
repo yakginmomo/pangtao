@@ -4,7 +4,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { AppShell } from '../components/AppShell';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { Icon } from '../components/Icon';
-import { TransactionKindBadge } from '../components/TransactionKindBadge';
+import { TransactionKindBadge, VoidedBadge } from '../components/TransactionKindBadge';
 import { useAuth } from '../context/AuthContext';
 import { fetchTransactions, transactionsQueryKey } from '../api/transactions.api';
 import { errorCode, errorMessage } from '../api/http';
@@ -57,6 +57,9 @@ const HistoryRow: React.FC<{ transaction: HistoryTransaction; first: boolean }> 
   const [expanded, setExpanded] = useState(false);
   const linesId = `history-lines-${transaction.id}`;
   const lineCount = transaction.lines.length;
+  // f-13 §2.2: a voided row keeps its place, marked and with its amounts struck through.
+  const voided = transaction.voidedAt !== null;
+  const struck: React.CSSProperties = voided ? { textDecoration: 'line-through', color: colors.textMuted } : {};
 
   return (
     <li
@@ -70,6 +73,7 @@ const HistoryRow: React.FC<{ transaction: HistoryTransaction; first: boolean }> 
               {formatCalendarDate(transaction.txnDate)}
             </span>
             <TransactionKindBadge kind={transaction.kind} />
+            {voided && <VoidedBadge testId="history-voided" />}
           </div>
           <Link
             to={`/transactions/${transaction.id}`}
@@ -93,7 +97,10 @@ const HistoryRow: React.FC<{ transaction: HistoryTransaction; first: boolean }> 
           )}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: space[1] }}>
-          <span style={{ fontSize: font.size.base, fontWeight: font.weight.bold, color: colors.textPrimary, fontVariantNumeric: 'tabular-nums' }}>
+          <span
+            data-testid="history-total"
+            style={{ fontSize: font.size.base, fontWeight: font.weight.bold, color: colors.textPrimary, fontVariantNumeric: 'tabular-nums', ...struck }}
+          >
             {formatSatang(transaction.totalAmount)}
           </span>
           {lineCount > 0 && (
@@ -132,7 +139,7 @@ const HistoryRow: React.FC<{ transaction: HistoryTransaction; first: boolean }> 
                 {line.targetAccountName}
                 {line.note && <span style={{ color: colors.textMuted }}> · {line.note}</span>}
               </span>
-              <span style={{ fontSize: font.size.sm, fontWeight: font.weight.semibold, fontVariantNumeric: 'tabular-nums' }}>
+              <span style={{ fontSize: font.size.sm, fontWeight: font.weight.semibold, fontVariantNumeric: 'tabular-nums', ...struck }}>
                 {formatSatang(line.amount)}
               </span>
             </li>

@@ -151,6 +151,8 @@ test.describe('F-13 Edit and void transactions (STS)', () => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto(`/transactions/${charge}/edit`);
     await expect(page.getByTestId('payment-submit')).toBeVisible();
+    // A long form scrolls vertically at 360 px; the line inputs must be reachable and fit the width.
+    await page.getByTestId('line-amount-0').scrollIntoViewIfNeeded();
     await expect(page.getByTestId('line-amount-0')).toBeInViewport();
     await expectNoHorizontalOverflow(page);
   });
