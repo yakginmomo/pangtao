@@ -54,6 +54,18 @@ export interface CreateAccountInput {
 }
 
 /** f-09 §2.1: PATCH /api/v1/accounts/:id, at least one field. */
+/** f-12 §2.1: PATCH /accounts/:id/opening-balance — the changed fields only, at least one. */
+export interface CorrectOpeningBalanceInput {
+  amount?: number;
+  date?: string;
+}
+
+/** f-12 §2.1: a removed opening balance, with when it was voided. */
+export interface VoidedOpeningBalanceTransaction extends OpeningBalanceTransaction {
+  /** ISO 8601 timestamp. */
+  voidedAt: string;
+}
+
 export interface UpdateAccountInput {
   name?: string;
   isArchived?: boolean;

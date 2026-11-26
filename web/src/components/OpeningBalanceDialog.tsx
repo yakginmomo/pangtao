@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { createOpeningBalance } from '../api/accounts.api';
+import { correctOpeningBalance, createOpeningBalance } from '../api/accounts.api';
 import { errorCode, errorMessage } from '../api/http';
 import { useAuth } from '../context/AuthContext';
 import { Account, OpeningBalanceTransaction } from '../types/account.types';
-import { parseThbToSatang } from '../utils/money';
+import { formatSatang, parseThbToSatang } from '../utils/money';
 import { bangkokToday, isFutureDate } from '../utils/date';
 import { colors, font, radius, space, zIndex } from '../styles/theme';
 
 interface OpeningBalanceDialogProps {
   account: Account;
+  /** f-12 §2.2: correct the account's existing opening balance instead of recording one. */
+  mode?: 'create' | 'edit';
   onClose: () => void;
   onSaved: (transaction: OpeningBalanceTransaction) => void;
 }
@@ -30,11 +32,16 @@ const labelStyle: React.CSSProperties = {
  */
 export const OpeningBalanceDialog: React.FC<OpeningBalanceDialogProps> = ({
   account,
+  mode = 'create',
   onClose,
   onSaved,
 }) => {
-  const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(bangkokToday());
+  const existing = mode === 'edit' ? account.openingBalance : null;
+  // Edit pre-fills the saved values: the amount as plain THB (e.g. 50000.00), the saved date.
+  const initialAmount = existing ? formatSatang(existing.amount).replace(/[,\s฿]/g, '') : '';
+  const initialDate = existing ? existing.date : bangkokToday();
+  const [amount, setAmount] = useState(initialAmount);
+  const [date, setDate] = useState(initialDate);
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -78,7 +85,13 @@ export const OpeningBalanceDialog: React.FC<OpeningBalanceDialogProps> = ({
 
     setIsSaving(true);
     try {
-      const transaction = await createOpeningBalance(account.id, { amount: satang, date });
+      const transaction = existing
+        ? // f-12: send only what changed.
+          await correctOpeningBalance(account.id, {
+            ...(satang !== existing.amount ? { amount: satang } : {}),
+            ...(date !== existing.date ? { date } : {}),
+          })
+        : await createOpeningBalance(account.id, { amount: satang, date });
       onSaved(transaction);
     } catch (error) {
       // F-01 §2.2: a 401 means the session expired; re-check the user so the route guard redirects.
@@ -131,7 +144,7 @@ export const OpeningBalanceDialog: React.FC<OpeningBalanceDialogProps> = ({
             color: colors.textPrimary,
           }}
         >
-          Set opening balance — {account.name}
+          {existing ? 'Edit opening balance' : 'Set opening balance'} — {account.name}
         </h3>
         <p style={{ marginTop: 0, marginBottom: space[5], color: colors.textSecondary, fontSize: font.size.sm }}>
           Record what this account already held before you started logging transactions. It is
@@ -211,7 +224,8 @@ export const OpeningBalanceDialog: React.FC<OpeningBalanceDialogProps> = ({
             <button
               type="submit"
               data-testid="opening-balance-save"
-              disabled={isSaving}
+              // f-12 §2.2: in edit mode Save stays disabled until a value changes.
+              disabled={isSaving || (existing !== null && amount === initialAmount && date === initialDate)}
               className="pt-btn-primary"
             >
               {isSaving ? 'Saving…' : 'Save opening balance'}
