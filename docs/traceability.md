@@ -267,3 +267,34 @@ TEST-10.9 needs "Alice with no loan accounts", but every seeded user owns a Cred
 | AC-11.8 | TEST-11.8 | E | `tests/e2e/transfers.spec.ts` | PASS locally (step as corrected in f-11 1.1) |
 
 **Status:** at the time of writing, F-11 is implemented on its branch and all eight ACs pass locally. It is not yet reviewed, merged into `sprint-2-staging` or released. The statuses and the tested commit are updated when it merges.
+
+### F-12 Opening balance management (contract 1.0, Issue #59)
+
+**Tested version:** branch `feature/F-12-opening-balance-management` from `sprint-2-staging` at `df027a3` (merge of PR #68, F-11). Failing-test commit `dcf8042`; implementation commits `3ef345b` (both endpoints) and `46e2d27` (Dashboard actions and dialogs). `npm run verify` on `46e2d27` (Docker `app` container stopped, so E2E used this branch's server): lint and both type-checks clean, 182 unit and API tests passed, 0 failed, 0 skipped (21 files), service-layer line coverage 98.99%, build succeeded, 27 E2E tests passed, 0 failed, 0 skipped. CI runs on the PR.
+
+**Failing-first.** At `dcf8042`, on the pre-change code, `PATCH /accounts/:id/opening-balance` and `POST /accounts/:id/opening-balance/void` did not exist, so every new API test failed with 404 where 200 or 400 was expected, and the NFR-02 route list (TEST-01.7) missed both routes. TEST-12.2, TEST-12.4 and TEST-12.6 open with an owner control that must return 200, so their expected 400 and 404 results cannot pass against a missing route. Two disclosures:
+
+- A missing route shows the tests reach the endpoints, not that each rule is enforced, so the DoD's three rule ACs also have mutation checks below.
+- TEST-12.7 (E2E) was added with the Dashboard actions in `46e2d27`, not before it. The DoD asks failing-first evidence for the rules (AC-12.1, 12.3, 12.5), which the API tests carry.
+
+**Mutation checks.** Each rule in `opening-balance.service.ts` was replaced, the matching test was run, and the file was restored from a saved copy. These runs are not commits.
+
+| AC | Rule replaced | Result |
+|---|---|---|
+| AC-12.1 | Correcting voids the opening balance and inserts a new row instead of updating it in place | TEST-12.1 FAIL: the returned transaction is not the original id |
+| AC-12.3 | Removing deletes the row instead of voiding it (D-04) | TEST-12.3 FAIL: `No Transaction found` for the original id |
+| AC-12.5 | The archived-account check skipped | TEST-12.5 FAIL: `expected 200 to be 400` |
+
+| AC | TEST | Level | Test file | Result |
+|---|---|---|---|---|
+| AC-12.1 | TEST-12.1 | A | `tests/api/opening-balance-management.api.test.ts` | PASS; failing-first `dcf8042` and the mutation check above |
+| AC-12.2 | TEST-12.2 | A | `tests/api/opening-balance-management.api.test.ts` | PASS; failing-first `dcf8042` (owner control) |
+| AC-12.3 | TEST-12.3 | A | `tests/api/opening-balance-management.api.test.ts` | PASS; failing-first `dcf8042` and the mutation check above |
+| AC-12.4 | TEST-12.4 | A | `tests/api/opening-balance-management.api.test.ts` | PASS; failing-first `dcf8042` (owner control) |
+| AC-12.5 | TEST-12.5 | A | `tests/api/opening-balance-management.api.test.ts` | PASS; failing-first `dcf8042` and the mutation check above |
+| AC-12.6 | TEST-12.6; NFR-02 route list in TEST-01.7 | A | `tests/api/opening-balance-management.api.test.ts`, `tests/api/auth.api.test.ts` | PASS; failing-first `dcf8042` (owner control, route list) |
+| AC-12.7 | TEST-12.7 | E | `tests/e2e/opening-balance-management.spec.ts` | PASS locally |
+
+The f-12 §5 DoD checks are the untagged tests "two parallel removes of the same opening balance give one 200 and one 404" and "the NFR-03 invariant holds after a corrected and a removed opening balance" in the same API file; both pass and both failed at `dcf8042`.
+
+**Status:** at the time of writing, F-12 is implemented on its branch and all seven ACs pass locally. It is not yet reviewed, merged into `sprint-2-staging` or released. The statuses and the tested commit are updated when it merges.
