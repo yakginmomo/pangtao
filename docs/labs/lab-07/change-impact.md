@@ -15,7 +15,7 @@ Change: **BR-10 backdate limit**. A Payment or Receipt may no longer be dated mo
 | Role | Version | Notes |
 |---|---|---|
 | Accepted Sprint 1 release (old behaviour) | `main` at `64c98f4`, Cloud Run revision `pangtao-00006-cjx`, accepted by the Lab 6 UAT Team on 22 Nov 2026 | The Sprint 1 baseline tag `v0.1.0` = `bec5575`; `64c98f4` adds Lab 5 delivery only (Lab 6 `uat.md` §1) |
-| Pre-change implementation (code to be modified) | `main` at `41bb484` (PR #48, 25 Nov 2026), deployed by Deploy demo run `45579272079` (revision name to be copied from that run) | `server/`, `web/` and `prisma/` are identical to `64c98f4`; the only difference is one added regression test from the Lab 6 exercise (PR #47) |
+| Pre-change implementation (code to be modified) | `main` at `41bb484` (PR #48, 25 Nov 2026), deployed by Deploy demo run `45579272079` as Cloud Run revision `pangtao-00008-dfl` | `server/`, `web/` and `prisma/` are identical to `64c98f4`; the only difference is one added regression test from the Lab 6 exercise (PR #47) |
 | Intervening development | PRs #41–#48: Lab 6 UAT documents, the controlled exercise (#45, reverted by #47) | No Sprint 2/3 feature code is on `main` |
 | Contract branch | `docs/update-contract` from `sprint-2-staging` at `942fb61` | Documentation only; code and tests follow after review (Part B) |
 
