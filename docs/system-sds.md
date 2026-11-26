@@ -92,7 +92,7 @@ Income and expense summaries read only lines whose target account type is Income
 | Dashboard | / | User | Balances grouped by account type; current-month income and expense; opening balance action per account |
 | Transactions | /transactions | User | Paginated history (filters arrive in Sprint 3) |
 | Transaction detail | /transactions/:id | User | One transaction with its allocation lines |
-| New transaction | /transactions/new | User | Pay and Receive tabs with an allocation-lines editor; `?tab=payment\|receive` opens a tab, and target groups name each line's meaning (for example Lend, Borrow, Loan repayment; F-10) |
+| New transaction | /transactions/new | User | Pay and Receive tabs with an allocation-lines editor; `?tab=payment\|receive` opens a tab, and target groups name each line's meaning (for example Lend, Borrow, Loan repayment; F-10; Transfer to and Transfer from another Cash account; F-11) |
 | Summary | /summary | User | Income, expense and net for a date range |
 | Accounts | /accounts | User | Create, rename, archive and unarchive accounts (F-09) |
 | Loans | /loans | User | Owed to me and I owe, with balances and totals, including card debt; Lend, Borrow and repayment shortcuts (F-10) |
@@ -129,7 +129,7 @@ Sprint 2 adds the Accounts (F-09) and Loans (F-10) screens to the navigation; Sp
 | POST /accounts | User | Create an account (name, type, optional subtype) |
 | PATCH /accounts/:id | User | Rename, archive or unarchive an account |
 | POST /accounts/:id/opening-balance | User | Record opening balance |
-| POST /transactions | User | Create Payment or Receipt with lines |
+| POST /transactions | User | Create Payment or Receipt with lines; a line to another Cash account is a transfer (F-11) |
 | GET /transactions | User | History |
 | GET /transactions/:id | User | One transaction with lines |
 | GET /summary/income-expense?from&to | User | Income, expense, net |
@@ -154,7 +154,7 @@ Feature contracts give full request, response and error shapes.
 | List users | 401 | 403 | Allow | All users, non-financial fields only |
 | Enable or disable user | 401 | 403 | Allow, but not self | Any other user |
 
-Account management (F-09) and loans (F-10) follow the User rows, and so will the later features (transfers, edit and void, search, favorites, reports); administrator user creation follows the Administrator rows. Access is default-deny, and hiding a control in the UI is never treated as authorization.
+Account management (F-09), loans (F-10) and transfers (F-11, through `POST /transactions`) follow the User rows, and so will the later features (edit and void, search, favorites, reports); administrator user creation follows the Administrator rows. Access is default-deny, and hiding a control in the UI is never treated as authorization.
 
 ## 6. Authentication and session design
 

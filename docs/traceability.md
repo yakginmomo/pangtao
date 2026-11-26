@@ -239,3 +239,31 @@ The same mutation exposed a weak test. With only the unique-violation mapping di
 TEST-10.9 needs "Alice with no loan accounts", but every seeded user owns a Credit Card (Loan Taken). The test archives that zero-balance card for the empty-state step, which `GET /loans` then leaves out (f-10 §1), and unarchives it afterwards.
 
 **Status:** at the time of writing, F-10 is implemented on its branch and all ten ACs pass locally. It is not yet reviewed, merged into `sprint-2-staging` or released. The statuses and the tested commit are updated when it merges.
+
+### F-11 Transfers (contract 1.1, Issue #58)
+
+**Tested version:** branch `feature/F-11-transfers` from `sprint-2-staging` at `92916f0` (merge of PR #67, F-10). Failing-test commit `0d4d17b`; implementation commit `3114e9d` (matrix rows); contract correction `8a40972` (f-11 1.1, traceability v2.2); form commit `5b1ceeb`. `npm run verify` on `5b1ceeb` (Docker `app` container stopped, so E2E used this branch's server): lint and both type-checks clean, 174 unit and API tests passed, 0 failed, 0 skipped (20 files), service-layer line coverage 98.90%, build succeeded, 26 E2E tests passed, 0 failed, 0 skipped. CI runs on the PR.
+
+**Failing-first.** At `0d4d17b`, on the pre-change code, a Cash target failed with `INVALID_TARGET_ACCOUNT` where 201 (API) or no error (unit) was expected: TEST-11.1, 11.2 (U and A), 11.3 and 11.4 (API). TEST-11.7's T−91 transfer returned `INVALID_TARGET_ACCOUNT` instead of `DATE_TOO_OLD`, because the target check runs before the date check. Three disclosures:
+
+- TEST-11.5 (U and A), TEST-11.6 and the unit half of TEST-11.4 already passed at `0d4d17b`. They assert that the source itself, archived Cash targets, a card source with a Cash line and another user's account stay rejected, and that the engines agree on a ledger with transfers. These held before F-11, so they are regression guards, not failing-first evidence.
+- The API half of TEST-11.4 failed at `0d4d17b` in its setup (the first transfer was rejected), not on the summary. A mutation check shows it checks the summary itself: with the summary query counting lines to Cash accounts as expense, TEST-11.4 fails (`income/expense` no longer match `3,000,000 / 120,000`). The file was restored from a saved copy; the run is not a commit.
+- TEST-11.8 (E2E) was added with the form in `5b1ceeb`. Its first run exposed a contract error: f-11 1.0's Receive step moved 200.00 THB from Bank into Wallet, but its expected result needed the opposite direction. f-11 1.1 (`8a40972`) corrects the step before the test was committed; the expected balances are unchanged (Sprint 2 README §6).
+
+**Existing tests changed with the matrix (f-05 1.4, f-06 1.4, f-11 1.1 §2.4).**
+
+- In `3114e9d`: TEST-05.13 (API) loses its Wallet case, now accepted in TEST-11.1; TEST-06.11 (API) loses its Wallet case, now accepted in TEST-11.2. The unit pair tables of TEST-05.13 and TEST-06.11 now accept Cash → Cash on both forms; every pair is still asserted.
+- In `5b1ceeb`: F-10 TEST-10.10's exact target-group lists end with **Transfer to** and **Transfer from**, as f-10 §2.2 specifies.
+
+| AC | TEST | Level | Test file | Result |
+|---|---|---|---|---|
+| AC-11.1 | TEST-11.1 | U, A | `tests/unit/transfers.rules.test.ts`, `tests/api/transfers.api.test.ts` | PASS; failing-first `0d4d17b` |
+| AC-11.2 | TEST-11.2 | U, A | `tests/unit/transfers.rules.test.ts`, `tests/api/transfers.api.test.ts` | PASS; failing-first `0d4d17b` |
+| AC-11.3 | TEST-11.3 | A | `tests/api/transfers.api.test.ts` | PASS; failing-first `0d4d17b` |
+| AC-11.4 | TEST-11.4 | U, A | `tests/unit/transfers.rules.test.ts`, `tests/api/transfers.api.test.ts` | PASS; API failing-first `0d4d17b` (in setup) and the mutation check above; unit is a regression guard |
+| AC-11.5 | TEST-11.5 | U, A | `tests/unit/transfers.rules.test.ts`, `tests/api/transfers.api.test.ts` | PASS; regression guard (passed before F-11) |
+| AC-11.6 | TEST-11.6 | A | `tests/api/transfers.api.test.ts` | PASS; regression guard (passed before F-11) |
+| AC-11.7 | TEST-11.7 | A | `tests/api/transfers.api.test.ts` | PASS; failing-first `0d4d17b` |
+| AC-11.8 | TEST-11.8 | E | `tests/e2e/transfers.spec.ts` | PASS locally (step as corrected in f-11 1.1) |
+
+**Status:** at the time of writing, F-11 is implemented on its branch and all eight ACs pass locally. It is not yet reviewed, merged into `sprint-2-staging` or released. The statuses and the tested commit are updated when it merges.
