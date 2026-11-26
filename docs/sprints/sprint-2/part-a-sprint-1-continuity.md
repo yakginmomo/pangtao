@@ -13,7 +13,7 @@
 | Candidate deployment | Deploy demo run [45834624485](https://github.com/yakginmomo/pangtao/actions/runs/45834624485) on `cad7d9d`, success; all four CI jobs, migration, deploy and public smoke test passed. `GET /api/v1/health` returned 200 `{"status":"ok"}` on 26 Nov 2026 21:16 Bangkok |
 | Continuity verification date | 26 Nov 2026, 21:13–21:18 Bangkok |
 | Evidence package | [evidence/part-a](evidence/part-a/README.md): scripts, recorded output, reset SQL and the full `npm run verify` log |
-| Related documents | [Sprint 1 contracts](../sprints/sprint-1/README.md) · [Sprint 1 UAT and findings](../labs/lab-06/uat.md) · [Lab 7 change impact](../labs/lab-07/change-impact.md) · [Lab 7 readiness](../labs/lab-07/readiness.md) · [SRS](../srs.md) · [Traceability](../traceability.md) |
+| Related documents | [Sprint 1 contracts](../sprint-1/README.md) · [Sprint 1 UAT and findings](../../labs/lab-06/uat.md) · [Lab 7 change impact](../../labs/lab-07/change-impact.md) · [Lab 7 readiness](../../labs/lab-07/readiness.md) · [SRS](../../srs.md) · [Traceability](../../traceability.md) |
 
 This document is the Part A record for Deliverable 2. It identifies the accepted Sprint 1 release, shows the original critical domain journey working on the current candidate, registers the deployment, UAT and maintenance findings that affect the baseline, and records the approved baseline revisions with their rationale. Execution evidence is quoted with the commit it was run on.
 

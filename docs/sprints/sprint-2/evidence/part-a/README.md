@@ -36,7 +36,7 @@ to reproduce the evidence and what each file contains.
 6. Reset the two ledgers to the Sprint 1 starting state:
 
    ```powershell
-   Get-Content docs/deliverable-2/evidence/part-a/reset-ledger.sql |
+   Get-Content docs/sprints/sprint-2/evidence/part-a/reset-ledger.sql |
      npx prisma db execute --stdin
    ```
 
@@ -65,8 +65,8 @@ journey. It records 15 checks (A1–A15) and exits non-zero if any check fails.
 ```powershell
 $pass = ((Get-Content .env | Where-Object { $_ -match '^SEED_DEFAULT_PASSWORD=' }) -join '').Substring(22)
 $env:PANGTAO_PASS = $pass
-node docs/deliverable-2/evidence/part-a/continuity-journey.mjs |
-  Out-File -Encoding utf8 docs/deliverable-2/evidence/part-a/continuity-journey-output.json
+node docs/sprints/sprint-2/evidence/part-a/continuity-journey.mjs |
+  Out-File -Encoding utf8 docs/sprints/sprint-2/evidence/part-a/continuity-journey-output.json
 ```
 
 Expected: every entry in `results` has `"pass": true`; balances Bank 7,920,000 and Credit Card
@@ -79,8 +79,8 @@ the server (Ctrl+C or stop the listener on port 8080), start it again with
 `npm run dev:server`, and read the ledger through a new login:
 
 ```powershell
-node docs/deliverable-2/evidence/part-a/persistence-read.mjs <transaction-id> |
-  Out-File -Encoding utf8 docs/deliverable-2/evidence/part-a/persistence-output.json
+node docs/sprints/sprint-2/evidence/part-a/persistence-read.mjs <transaction-id> |
+  Out-File -Encoding utf8 docs/sprints/sprint-2/evidence/part-a/persistence-output.json
 ```
 
 Expected: `loginStatus` and `detailStatus` are 200, the transaction id and amount are unchanged,
@@ -89,7 +89,7 @@ and the balances still match step 2.
 ### 4. Reset after the run
 
 ```powershell
-Get-Content docs/deliverable-2/evidence/part-a/reset-ledger.sql |
+Get-Content docs/sprints/sprint-2/evidence/part-a/reset-ledger.sql |
   npx prisma db execute --stdin
 ```
 
