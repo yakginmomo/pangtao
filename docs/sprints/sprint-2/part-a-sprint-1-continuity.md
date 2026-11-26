@@ -187,6 +187,7 @@ Every finding that affects the accepted baseline is listed, including ones judge
 | **CE-F-01** (#46) | Partner UAT controlled exercise on `pangtao-00010-ges`, reported 24 Nov 2026; Issue opened 25 Nov 14:21 Bangkok | BR-05, AC-05.4, F-05 | Accepted defect (Major): a payment whose lines summed below the total was saved, leaving money unaccounted for. The defect had been reintroduced deliberately in PR #45 to test the UAT process; the accepted release was not affected. Restore the exact-sum rule. | **Fixed and released**; Issue #46 closed 25 Nov 19:11 | Red `d082577`, green `adc801b`, PR #47; released by PR #48 as `41bb484` (revision `pangtao-00008-dfl`) and present in `2dc3dc1` and the candidate | **Automated PASS, independent UAT retest outstanding.** TEST-05.4, including the new under-allocation case, passes in the 137-test suite on the candidate; the UAT Team has not yet re-run UAT-04 on a fixed revision (Part E / remaining action **R-3**). |
 | **CHG-01** (#49) | Lab 7 change request, 25 Nov 2026 19:11 | BR-10 v2.0; F-05 1.3, F-06 1.3; F-04 1.2 (wording only) | Accepted: a Payment or Receipt may not be dated more than 90 days before today (Bangkok); T−90 accepted, T−91 rejected with 400 `DATE_TOO_OLD`; opening balances, summaries, history and already-saved rows unchanged. Contract revised and reviewed **before** code. | **Implemented and released**; Issue #49 closed 26 Nov 19:42 Bangkok (12:42 UTC) | Contract `fcbd92f`, PR #50; red `676e90c`; implementation `5b16bc7`, PR #51; released by PR #52 as `2dc3dc1` (revision `pangtao-00009-cwz`) | **PASS.** TEST-05.14 (U, A), TEST-05.15 (E), TEST-06.12 (A) pass; PD-1 T−91 → 400, PD-2 T−90 → 201, PD-4 cross-user at T−91 → 404 on the deployed revision; A11 re-checks it on the candidate. |
 | **L7-01** | Lab 7 readiness review, 26 Nov 2026 | AC-05.15, BR-10, F-05 (web date picker) | Accepted as a **documented known limitation**: the picker's `min`/`max` are computed when the form renders. A form left open across Bangkok midnight offers yesterday's window until any input changes. The submit check and the server compute the window at use, so no wrong date can be saved. Committed Sprint 2 fix: owner Chawin, due 29 Nov 2026. | **Open — fix committed for Sprint 2** | No fix yet; no code change | **Not applicable as a save defect:** a T−91 typed date still shows the field error and the server returns `DATE_TOO_OLD`; verified by TEST-05.14/TEST-05.15. Fix, test and re-test due 29 Nov 2026 (Chawin), before the Deliverable 2 submission. |
+| **CHG-02** (Q-1) | Sprint 2 contract review, PR #63, 26 Nov 2026 | SRS §4 allocation matrix, BR-06; F-10 1.0, F-11 1.0 | Accepted requirement revision (narrowed): a Loan Taken (card) source accepts Expense lines only, permanently. Before v2.1, SRS §4 limited it to Expense lines "in Sprint 1", which left card lending and card-to-Cash moves open for later sprints; v2.1 rules them out, so every loan and transfer row uses a Cash source. Reason: the stakeholder brief needs card purchases only, and keeping every loan row a Cash movement keeps the effects and summary rules simple. Recorded in the contract **before** any Sprint 2 test or code. | **Approved; implementation pending** (Sprint 2) | Contract PR #63, approved by Supichaya and merged 26 Nov 2026 23:34 Bangkok (merge `d4238d2`); SRS §4 and traceability v2.1. No code yet. | **Not yet tested.** Planned: TEST-10.6 (card source with a Loan Given or Cash line → 400 `INVALID_TARGET_ACCOUNT`) and TEST-11.5 (card source with a Cash line). The behaviour is already in force, because the current matrix rejects both lines. TEST-05.6 covers the card → Cash case (Bank Account) and passes on the candidate; the card → Loan Given case has no test until TEST-10.6, because no Loan Given account exists before F-09. |
 
 ### 3.2 Deployment, verification and maintenance register
 
@@ -205,7 +206,7 @@ Every finding that affects the accepted baseline is listed, including ones judge
 | **OPS-06** (TD-1) | Lab 7 readiness review, 26 Nov 2026 | BR-10 v2.0; F-05/F-06 date window | Accepted: keep the Bangkok date window implemented once on the server (`date.util.ts`) and once in the web form (`date.ts`). The server is authoritative; a unit test fails if the two windows drift. Revisit only if a shared package is introduced. | **Open — low, accepted** | No code change | The drift-guard unit test passes in the 26 Nov suite; A10 and A11 exercise the server boundary. |
 | **OPS-07** (TD-4) | Lab 7 readiness review, 26 Nov 2026 | NFR-06; release pipeline; `deploy/tests/` | Accepted low debt: the offline stub tests for the deploy scripts are not run by `.github/workflows/ci.yml`, so a deploy-script change can break the pipeline without a failing check. Add a CI job before Final Delivery, or record why not. | **Open — low** | No code change yet | Not applicable to product behaviour. Deploy runs `45637417725` and `45834624485` completed the real pipeline successfully with the current scripts. |
 
-**No finding in this register changes a Sprint 1 acceptance criterion's intended behaviour without an approved contract revision.** CHG-01 is the only requirement-level change, and it was reviewed in PR #50 before tests or code.
+**No finding in this register changes a Sprint 1 acceptance criterion's intended behaviour without an approved contract revision.** There are two requirement-level changes, and each was reviewed before tests or code: CHG-01 (BR-10 v2.0) in PR #50, and CHG-02 (SRS §4 v2.1) in PR #63. CHG-02 changes no Sprint 1 behaviour, because it makes permanent a limit Sprint 1 already enforces.
 
 ---
 
@@ -213,7 +214,7 @@ Every finding that affects the accepted baseline is listed, including ones judge
 
 ### 4.1 Requirements baseline (SRS and traceability)
 
-The baseline version history is kept in `docs/traceability.md` §2 and `docs/sprints/sprint-1/README.md` §5. Revisions are append-only; no requirement was added or dropped.
+The baseline version history is kept in `docs/traceability.md` §2 and `docs/sprints/sprint-1/README.md` §5. Revisions are append-only; no requirement was added or dropped. This table is current to traceability v2.1 (PR #63, merged 26 Nov 2026 23:34 Bangkok); the verification in §2 was run before v2.1 and is unaffected, because v2.1 changes contracts, not code.
 
 | Version | Date | Approval | Change and rationale |
 |---|---|---|---|
@@ -228,6 +229,7 @@ The baseline version history is kept in `docs/traceability.md` §2 and `docs/spr
 | v1.8 | 15 Nov 2026 | PR #33 | Lab 5 CI: four parallel checks, E2E on every PR, 5 s connection wait (DEP-03), NFR-09 evidence. |
 | v1.9 | 17 Nov 2026 | PR #40 | Repeatable release: visible login subtitle marker; deployment guide records the public URL and revision checks. |
 | v2.0 | 25 Nov 2026 | PR #50 (approved before implementation) | BR-10 revised for the 90-day backdate limit; F-05 1.3/F-06 1.3 add AC-05.14, AC-05.15, AC-06.12; F-04 1.2 is wording only. This is CHG-01. |
+| v2.1 | 26 Nov 2026 | PR #63 (two rounds of requested changes, then approved and merged before implementation) | Sprint 2 contracts F-09 1.0 to F-13 1.0 and Sprint 2 README 1.0. **Requirement revision (narrowed):** SRS §4 makes the card source Expense-only permanently (CHG-02). Contract revisions: F-05 1.4 and F-06 1.4 add the Sprint 2 matrix rows and move the TEST-05.13/TEST-06.11 cases they make valid to TEST-11.1, TEST-11.2 and TEST-10.3; F-07 1.2 returns voided transactions in history from F-13 (BR-12), and F-13 §2.4 lists the F-07 tests whose expected values change with it. Traceability §1 maps every Sprint 2 AC. New error codes `ACCOUNT_NAME_EXISTS` and `TRANSACTION_VOIDED`. |
 
 ### 4.2 Release baselines
 
@@ -241,22 +243,23 @@ The baseline version history is kept in `docs/traceability.md` §2 and `docs/spr
 
 ### 4.3 Feature contract versions
 
-| Feature | Version | Rationale recorded in `sprint-1/README.md` §5 |
+| Feature | Version | Rationale recorded in `sprint-1/README.md` §5 (F-01 to F-08) or `sprint-2/README.md` §6 (F-09 to F-13) |
 |---|---|---|
 | F-01 | 1.5 | Test routing, CSRF/Origin and Content-Type tightening, error catalogue, database-backed rate limit, `TRUST_PROXY`. |
 | F-02 | 1.0 | Admin list, enable/disable, self-protection; no revision. |
 | F-03 | 1.1 | Full ledger schema in one migration; invariant wording for Loan Taken openings. |
 | F-04 | 1.2 | Archived-account rule (BR-14) and Lab 7 wording: the 90-day limit does not apply to opening balances. |
-| F-05 | 1.3 | BR-14 archived source, BR-06 target cases, and BR-10 v2.0 90-day limit with AC-05.14/05.15. |
-| F-06 | 1.3 | BR-14 archived receiving account, BR-06 target cases, and BR-10 v2.0 with AC-06.12. |
-| F-07 | 1.1 | Empty/error-state E2E test; non-voided history until F-13; real index name. |
+| F-05 | 1.4 | BR-14 archived source, BR-06 target cases, and BR-10 v2.0 90-day limit with AC-05.14/05.15 (1.3). 1.4 (v2.1): the Sprint 2 rows Cash → Loan Given (F-10) and Cash → Cash (F-11); the TEST-05.13 Wallet case moves to TEST-11.1; the card source stays Expense-only (CHG-02). |
+| F-06 | 1.4 | BR-14 archived receiving account, BR-06 target cases, and BR-10 v2.0 with AC-06.12 (1.3). 1.4 (v2.1): the Sprint 2 rows Loan Given, Loan Taken (F-10) and Cash (F-11); the TEST-06.11 Wallet and Credit Card cases move to TEST-11.2 and TEST-10.3. |
+| F-07 | 1.2 | Empty/error-state E2E test; non-voided history until F-13; real index name (1.1). 1.2 (v2.1): from F-13, history and detail also return voided transactions, marked as voided (BR-12); the affected F-07 test expectations are listed in F-13 §2.4. |
 | F-08 | 1.0 | Summary totals, presets, invalid range, access; no revision. |
+| F-09 to F-13 | 1.0 | Sprint 2 contracts, approved in PR #63 before implementation. Not yet implemented (Part B). |
 
 ### 4.4 What the revisions did not change
 
 - No FR, BR or NFR was added or removed; the count remains 25 FR, 16 BR, 10 NFR.
-- No acceptance criterion or test was removed or weakened by a revision. New AC and TEST IDs were added only where a contracted behaviour had no test — for example AC-04.10, AC-05.12/05.13, AC-06.10/06.11, TEST-07.9, AC-05.14/05.15 and AC-06.12.
-- BR-10 is the only requirement-level revision: it tightens a date rule for new Payments and Receipts and explicitly leaves opening balances, summaries, history and existing rows unchanged.
+- No acceptance criterion or test was removed or weakened by a revision. New AC and TEST IDs were added only where a contracted behaviour had no test — for example AC-04.10, AC-05.12/05.13, AC-06.10/06.11, TEST-07.9, AC-05.14/05.15 and AC-06.12. In v2.1, the TEST-05.13 and TEST-06.11 cases that the Sprint 2 rows make valid are **moved** to TEST-11.1, TEST-11.2 and TEST-10.3, where they are asserted as accepted, not deleted. The F-07 test expectations that change once voided rows are listed are planned and named in F-13 §2.4; none has changed yet.
+- There are two requirement-level revisions. **BR-10 v2.0** (CHG-01) tightens a date rule for new Payments and Receipts and explicitly leaves opening balances, summaries, history and existing rows unchanged. **SRS §4 v2.1** (CHG-02) narrows the matrix by making the card source Expense-only permanently; Sprint 1 already enforced this limit, so no existing behaviour changes.
 - Every revision above was merged through a reviewed PR; the rationale and the reviewed version are preserved in git history and in the sprint README version table.
 
 ---
