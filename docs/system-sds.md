@@ -89,7 +89,7 @@ Income and expense summaries read only lines whose target account type is Income
 | Screen | Route | Role | Purpose |
 |---|---|---|---|
 | Login | /login | Anonymous | Email and password sign-in |
-| Dashboard | / | User | Balances grouped by account type; current-month income and expense; opening balance action per account |
+| Dashboard | / | User | Balances grouped by account type; current-month income and expense; per account, set an opening balance (F-04) or edit or remove it (F-12) |
 | Transactions | /transactions | User | Paginated history (filters arrive in Sprint 3); a voided transaction keeps its place with a Voided badge and a struck-through total (F-13) |
 | Transaction detail | /transactions/:id | User | One transaction with its allocation lines; Edit and Void for an active Payment or Receipt, "Voided on" and "Edited" marks, and a pointer to the Dashboard for an opening balance (F-13) |
 | Edit transaction | /transactions/:id/edit | User | The New transaction form pre-filled, with the kind fixed; Save waits for a change (F-13) |
@@ -130,6 +130,8 @@ Sprint 2 adds the Accounts (F-09) and Loans (F-10) screens to the navigation; Sp
 | POST /accounts | User | Create an account (name, type, optional subtype) |
 | PATCH /accounts/:id | User | Rename, archive or unarchive an account |
 | POST /accounts/:id/opening-balance | User | Record opening balance |
+| PATCH /accounts/:id/opening-balance | User | Correct the amount or date of the opening balance in place (F-12) |
+| POST /accounts/:id/opening-balance/void | User | Remove the opening balance by voiding it (F-12) |
 | POST /transactions | User | Create Payment or Receipt with lines; a line to another Cash account is a transfer (F-11) |
 | PATCH /transactions/:id | User | Replace a Payment or Receipt with its full new version; the kind is fixed (F-13) |
 | POST /transactions/:id/void | User | Void a Payment or Receipt; it stays in history (F-13) |
@@ -150,7 +152,7 @@ Feature contracts give full request, response and error shapes.
 | Log out, view current user | 401 | Allow | Allow | Own session |
 | View accounts and balances | 401 | Allow | 403 | Own accounts only |
 | Create, rename or archive an account | 401 | Allow | 403 | Own accounts only; another user's account returns 404 |
-| Record opening balance | 401 | Allow | 403 | Own accounts only |
+| Record, correct or remove an opening balance | 401 | Allow | 403 | Own accounts only; another user's account returns 404 |
 | Create or view transactions and history | 401 | Allow | 403 | Own records only; others return 404 |
 | Edit or void a transaction | 401 | Allow | 403 | Own Payments and Receipts only; others return 404 (F-13) |
 | View income and expense summary | 401 | Allow | 403 | Own data only |
@@ -158,7 +160,7 @@ Feature contracts give full request, response and error shapes.
 | List users | 401 | 403 | Allow | All users, non-financial fields only |
 | Enable or disable user | 401 | 403 | Allow, but not self | Any other user |
 
-Account management (F-09), loans (F-10), transfers (F-11, through `POST /transactions`) and edit and void (F-13) follow the User rows, and so will the later features (search, favorites, reports); administrator user creation follows the Administrator rows. Access is default-deny, and hiding a control in the UI is never treated as authorization.
+Account management (F-09), loans (F-10), transfers (F-11, through `POST /transactions`), opening-balance management (F-12) and edit and void (F-13) follow the User rows, and so will the later features (search, favorites, reports); administrator user creation follows the Administrator rows. Access is default-deny, and hiding a control in the UI is never treated as authorization.
 
 ## 6. Authentication and session design
 
