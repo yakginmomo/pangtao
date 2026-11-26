@@ -195,6 +195,8 @@ describe('F-01 Authentication and Authorization Foundation (STS)', () => {
         // F-09 (Sprint 2): account management is User-only.
         { method: 'POST', path: '/api/v1/accounts/', access: 'USER' },
         { method: 'PATCH', path: '/api/v1/accounts/:id', access: 'USER' },
+        // F-10 (Sprint 2): the outstanding-loans overview is User-only.
+        { method: 'GET', path: '/api/v1/loans/', access: 'USER' },
       ])
     );
 
