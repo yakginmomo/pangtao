@@ -375,10 +375,11 @@ describe('F-05 Payment and Charge (STS)', () => {
     expect(await aliceRows()).toEqual({ transactions: 0, lines: 0 });
   });
 
-  it('TEST-05.13 (AC-05.13): a Cash, Income, self or archived target returns 400 INVALID_TARGET_ACCOUNT', async () => {
+  // f-05 1.4: the Wallet (Cash) case is a valid transfer from F-11 and moved to TEST-11.1.
+  it('TEST-05.13 (AC-05.13): an Income, self or archived target returns 400 INVALID_TARGET_ACCOUNT', async () => {
     await prisma.account.update({ where: { id: ids['Telecom'] }, data: { isArchived: true } });
 
-    for (const target of ['Wallet', 'Salary', 'Bank Account', 'Telecom']) {
+    for (const target of ['Salary', 'Bank Account', 'Telecom']) {
       const res = await asAlice(TRANSACTIONS_URL).send(
         payment({
           accountId: ids['Bank Account'],
@@ -802,7 +803,9 @@ describe('F-06 Received Money (STS)', () => {
   it('TEST-06.11 (AC-06.11): an archived, self or out-of-matrix target returns 400 INVALID_TARGET_ACCOUNT', async () => {
     await prisma.account.update({ where: { id: ids['Interest Earned'] }, data: { isArchived: true } });
 
-    for (const target of ['Interest Earned', 'Bank Account', 'Wallet', 'Credit Card', 'Dining']) {
+    // f-06 1.4: the Credit Card (Loan Taken) case is valid borrowing from F-10 and moved to TEST-10.3;
+    // the Wallet (Cash) case is a valid transfer from F-11 and moved to TEST-11.2.
+    for (const target of ['Interest Earned', 'Bank Account', 'Dining']) {
       const res = await asAlice(TRANSACTIONS_URL).send(
         receipt({
           accountId: ids['Bank Account'],

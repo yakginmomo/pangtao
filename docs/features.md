@@ -18,7 +18,7 @@ Related documents: [SRS](srs.md) · [Requirements traceability](traceability.md)
 | F-10 | Loans | Lend, borrow, repay, receive repayment; outstanding overview | FR-14, 21; BR-06 | F-05, F-06, F-09 | 2 |
 | F-11 | Transfers | Transfer lines between Cash accounts | FR-15; BR-06 | F-05, F-06 | 2 |
 | F-12 | Opening balance management | Correct or remove opening balance | FR-11; BR-11 | F-04 | 2 |
-| F-13 | Edit and void transactions | Corrections with recalculated balances | FR-16; BR-12 | F-05, F-06 | 2 |
+| F-13 | Edit and void transactions | Corrections with recalculated balances; voided transactions stay in history | FR-16; BR-12 | F-05, F-06, F-07 | 2 |
 | F-14 | Search and filter | Filter history by date, account, category, text, amount | FR-18 | F-07 | 3 |
 | F-15 | Favorites and duplicate | Favorite flag and list; duplicate into new editable form | FR-19, 20; BR-15 | F-07 | 3 |
 | F-16 | Category summaries and reports | Spending per category; monthly report | FR-23, 24 | F-08 | 3 |

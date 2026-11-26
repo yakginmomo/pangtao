@@ -1,6 +1,6 @@
 # F-05 Payment and Charge: Engineering Contract
 
-Requirements: FR-12; BR-04, BR-05, BR-06, BR-07, BR-09, BR-10, BR-14, BR-16 · Depends on: F-03 · Contract version: 1.3 (see [version history](README.md#5-contract-version-history)) · Suggested branch: `feature/F-05-payment-charge`
+Requirements: FR-12; BR-04, BR-05, BR-06, BR-07, BR-09, BR-10, BR-14, BR-16 · Depends on: F-03 · Contract version: 1.4 (see [version history](README.md#5-contract-version-history)) · Suggested branch: `feature/F-05-payment-charge`
 
 Shared conventions, error codes and the Product Definition of Done are in [README.md](README.md).
 
@@ -24,8 +24,8 @@ Shared conventions, error codes and the Product Definition of Done are in [READM
 - **BR-04 (Positive Satang Amounts)**: `totalAmount` and all line `amount` values must be positive integer satang $\le 10,000,000,000$ ($100,000,000.00\text{ THB}$).
 - **BR-05 (Line Sum Equality)**: A transaction must contain at least 1 allocation line. The sum of line amounts must equal `totalAmount` exactly. Any mismatch returns `400 VALIDATION_ERROR` with code `INVALID_ALLOCATION_SUM`, and nothing is saved.
 - **BR-06 (Allowed Target Matrix & Separation)**:
-  - When source is **Cash**: target accounts in Sprint 1 may be `EXPENSE` (spending) or `LOAN_TAKEN` (debt repayment).
-  - When source is **Loan Taken** (card charge): target accounts in Sprint 1 must be `EXPENSE` only.
+  - When source is **Cash**: target accounts in Sprint 1 may be `EXPENSE` (spending) or `LOAN_TAKEN` (debt repayment). (v1.4) From Sprint 2 they may also be `LOAN_GIVEN` (lending, F-10) or another `CASH` account (transfer out, F-11); `INCOME` stays invalid (Sprint 2 README §2.2).
+  - When source is **Loan Taken** (card charge): target accounts must be `EXPENSE` only (unchanged in Sprint 2: F-10 Q-1).
   - Target account cannot equal source account.
   - All referenced accounts must belong to the caller and must not be archived. An archived source account returns `400 VALIDATION_ERROR` and nothing is saved (BR-14, as in F-04).
 - **BR-16 (Source Account Type)**: The source account must be a `CASH` or `LOAN_TAKEN` account. Any other source type returns `400 INVALID_SOURCE_ACCOUNT` and nothing is saved.
@@ -54,7 +54,7 @@ Shared conventions, error codes and the Product Definition of Done are in [READM
 - When the source account is archived: returns 400 VALIDATION_ERROR (BR-14).
 - When lines do not sum to total: returns 400 with code `INVALID_ALLOCATION_SUM`.
 - When card source targets a non-expense account in Sprint 1: returns 400 with code `INVALID_TARGET_ACCOUNT`.
-- When a line target is archived, equals the source, or is outside the Sprint 1 matrix: returns 400 with code `INVALID_TARGET_ACCOUNT`.
+- When a line target is archived, equals the source, or is outside the matrix (Sprint 1 rows; from v1.4 the Sprint 2 rows in Sprint 2 README §2.2): returns 400 with code `INVALID_TARGET_ACCOUNT`.
 - When any account belongs to another user: returns 404 NOT_FOUND.
 
 ### 2.2 UI
@@ -90,7 +90,7 @@ Shared conventions, error codes and the Product Definition of Done are in [READM
 | AC-05.10 | Submitting a Payment whose source is an Income, Expense or Loan Given account returns 400 INVALID_SOURCE_ACCOUNT and saves nothing. |
 | AC-05.11 | A zero or negative total or line amount, or an amount above $100,000,000.00\text{ THB}$, returns 400 VALIDATION_ERROR and saves nothing (BR-04). |
 | AC-05.12 | Submitting a Payment whose source account is archived returns 400 VALIDATION_ERROR and saves nothing (BR-14). |
-| AC-05.13 | A line whose target is archived, equals the source, or has a type outside the Sprint 1 matrix (Cash → Expense or Loan Taken; Loan Taken → Expense) returns 400 INVALID_TARGET_ACCOUNT and saves nothing (BR-06). |
+| AC-05.13 | A line whose target is archived, equals the source, or has a type outside the matrix returns 400 INVALID_TARGET_ACCOUNT and saves nothing (BR-06). Sprint 1 matrix: Cash → Expense or Loan Taken; Loan Taken → Expense. (v1.4) Sprint 2 adds Cash → Loan Given (F-10) and Cash → Cash (F-11). |
 
 ---
 
@@ -112,7 +112,7 @@ Shared conventions, error codes and the Product Definition of Done are in [READM
 | **TEST-05.10** | AC-05.10 | A | Alice logged in; Salary account (`INCOME`) | POST `/api/v1/transactions` (kind: PAYMENT, source: Salary, total: 1,000.00 THB, lines: Dining 1,000.00 THB) | 400 INVALID_SOURCE_ACCOUNT; no transaction or line is saved. |
 | **TEST-05.11** | AC-05.11 | A | Alice logged in; Bank source | POST `/api/v1/transactions` with total 0; then total -100; then total 10000000001; then a valid total with a line amount of 0 | Each returns 400 VALIDATION_ERROR; no transaction or line is saved. |
 | **TEST-05.12** | AC-05.12 | A | Alice logged in; Wallet archived | POST `/api/v1/transactions` (kind: PAYMENT, source: Wallet, total: 100.00 THB, lines: Dining 100.00 THB) | 400 VALIDATION_ERROR; no transaction or line is saved. |
-| **TEST-05.13** | AC-05.13 | U, A | Alice logged in; Bank source | POST `/api/v1/transactions` (source: Bank) with a line targeting, in turn: Wallet (Cash), Salary (Income), Bank itself, an archived Telecom account | Each returns 400 INVALID_TARGET_ACCOUNT; no transaction or line is saved. |
+| **TEST-05.13** | AC-05.13 | U, A | Alice logged in; Bank source | POST `/api/v1/transactions` (source: Bank) with a line targeting, in turn: Salary (Income), Bank itself, an archived Telecom account. (v1.4: the Wallet (Cash) case moved to TEST-11.1, where a Cash target is an accepted transfer; it stays here until F-11 changes the matrix.) | Each returns 400 INVALID_TARGET_ACCOUNT; no transaction or line is saved. |
 
 ---
 

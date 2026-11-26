@@ -32,8 +32,14 @@ export default tseslint.config(
     },
   },
   {
-    // Node: server, Prisma seed, tests, and tool config files.
-    files: ['server/**/*.ts', 'prisma/**/*.ts', 'tests/**/*.ts', '*.config.{ts,mjs,js}'],
+    // Node: server, Prisma seed, tests, tool config files, and evidence helper scripts.
+    files: [
+      'server/**/*.ts',
+      'prisma/**/*.ts',
+      'tests/**/*.ts',
+      '*.config.{ts,mjs,js}',
+      'docs/**/*.mjs',
+    ],
     languageOptions: { globals: { ...globals.node } },
   },
   {

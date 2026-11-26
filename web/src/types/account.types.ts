@@ -45,3 +45,32 @@ export interface CreateOpeningBalanceInput {
   /** YYYY-MM-DD */
   date: string;
 }
+
+/** f-09 §2.1: POST /api/v1/accounts. `subtype` only for Cash (WALLET, BANK) and Loan Taken (CREDIT_CARD, OTHER). */
+export interface CreateAccountInput {
+  name: string;
+  type: AccountType;
+  subtype?: AccountSubtype | null;
+}
+
+/** f-12 §2.1: PATCH /accounts/:id/opening-balance — the changed fields only, at least one. */
+export interface CorrectOpeningBalanceInput {
+  amount?: number;
+  date?: string;
+}
+
+/** f-12 §2.1: a removed opening balance, with when it was voided. */
+export interface VoidedOpeningBalanceTransaction extends OpeningBalanceTransaction {
+  /** ISO 8601 timestamp. */
+  voidedAt: string;
+}
+
+/** f-09 §2.1: PATCH /api/v1/accounts/:id, at least one field. */
+export interface UpdateAccountInput {
+  name?: string;
+  isArchived?: boolean;
+}
+
+export interface AccountResponse {
+  account: Account;
+}

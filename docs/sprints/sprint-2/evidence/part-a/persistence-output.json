@@ -1,0 +1,22 @@
+{
+  "loginStatus": 200,
+  "detailStatus": 200,
+  "transaction": {
+    "id": "0a7a5e95-3ed6-4173-a6a4-8f28874aefb9",
+    "kind": "PAYMENT",
+    "totalAmount": 80000,
+    "memo": "Sprint 1 continuity repayment",
+    "lines": 1
+  },
+  "balances": {
+    "Bank Account": 7920000,
+    "Wallet": 0,
+    "Credit Card": 40000,
+    "Interest Earned": 0,
+    "Salary": 3000000,
+    "Dining": 70000,
+    "Electricity": 0,
+    "Groceries": 50000,
+    "Telecom": 0
+  }
+}

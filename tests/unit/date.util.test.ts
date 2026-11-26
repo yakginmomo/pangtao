@@ -39,4 +39,24 @@ describe('F-05 Payment and Charge (unit rules)', () => {
       expect(web.isBeforeBackdateLimit(oldestAllowedDate(BANGKOK, now), now), instant).toBe(false);
     }
   });
+
+  it('L7-01 (AC-05.15): the form helpers find the next Bangkok midnight and shift calendar days across month and year ends', () => {
+    // 2026-11-26T16:59:50Z = 23:59:50 in Bangkok: 10 s to midnight.
+    expect(web.msUntilNextBangkokMidnight(new Date('2026-11-26T16:59:50Z'))).toBe(10_000);
+    // Exactly midnight in Bangkok: the next change is a full day away.
+    expect(web.msUntilNextBangkokMidnight(new Date('2026-11-26T17:00:00Z'))).toBe(86_400_000);
+    // Noon UTC = 19:00 in Bangkok: 5 h to midnight.
+    expect(web.msUntilNextBangkokMidnight(new Date('2026-12-31T12:00:00Z'))).toBe(5 * 3_600_000);
+
+    expect(web.addCalendarDays('2026-11-30', 1)).toBe('2026-12-01');
+    expect(web.addCalendarDays('2026-12-31', 1)).toBe('2027-01-01');
+    expect(web.addCalendarDays('2028-03-01', -1)).toBe('2028-02-29'); // leap year
+    // The form's min (today − 90) equals the server's window on both sides of Bangkok midnight.
+    for (const instant of ['2026-11-26T16:59:50Z', '2026-11-26T17:00:10Z']) {
+      const now = new Date(instant);
+      expect(web.addCalendarDays(web.bangkokToday(now), -web.BACKDATE_LIMIT_DAYS), instant).toBe(
+        oldestAllowedDate(BANGKOK, now)
+      );
+    }
+  });
 });

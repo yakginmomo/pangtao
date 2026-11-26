@@ -1,6 +1,9 @@
 import { AccountSubtype, AccountType, Prisma } from '@prisma/client';
 import { prisma } from '../prisma.js';
+import { AppError } from '../middleware/error.middleware.js';
 import { satangToJson } from '../utils/money.util.js';
+import type { CreateAccountBodyDto, UpdateAccountBodyDto } from '../schemas/account.schema.js';
+import { accountNameExistsError, mapDuplicateName } from './account.rules.js';
 
 export interface AccountView {
   id: string;
@@ -68,9 +71,43 @@ function balanceQuery(userId: string) {
   `;
 }
 
+/** An account with its derived balance still in bigint satang, for callers that add balances (F-10). */
+export interface AccountBalance {
+  id: string;
+  name: string;
+  type: AccountType;
+  subtype: AccountSubtype | null;
+  isArchived: boolean;
+  balance: bigint;
+  opening: { id: string; totalAmount: bigint; txnDate: Date } | null;
+}
+
 export class AccountService {
   /** AC-03.1, AC-03.3: the caller's own accounts with derived balances (BR-01, BR-07). */
   async listAccounts(userId: string): Promise<AccountView[]> {
+    return (await this.listAccountBalances(userId)).map((account) => ({
+      id: account.id,
+      name: account.name,
+      type: account.type,
+      subtype: account.subtype,
+      isArchived: account.isArchived,
+      balance: satangToJson(account.balance),
+      openingBalance: account.opening
+        ? {
+            transactionId: account.opening.id,
+            amount: satangToJson(account.opening.totalAmount),
+            // DATE column arrives as UTC midnight; the calendar date is its ISO prefix.
+            date: account.opening.txnDate.toISOString().slice(0, 10),
+          }
+        : null,
+    }));
+  }
+
+  /**
+   * The caller's accounts in F-03 order with balances as bigint satang, so sums stay exact
+   * (NFR-03). `listAccounts` converts them at the API boundary; F-10 totals them first.
+   */
+  async listAccountBalances(userId: string): Promise<AccountBalance[]> {
     // One repeatable-read snapshot so accounts, balances and openings are mutually consistent.
     const { accounts, balances, openings } = await prisma.$transaction(
       async (tx) => {
@@ -107,17 +144,82 @@ export class AccountService {
         const opening = openingByAccount.get(account.id);
         return {
           ...account,
-          balance: satangToJson(balanceById.get(account.id) ?? 0n),
-          openingBalance: opening
-            ? {
-                transactionId: opening.id,
-                amount: satangToJson(opening.totalAmount),
-                // DATE column arrives as UTC midnight; the calendar date is its ISO prefix.
-                date: opening.txnDate.toISOString().slice(0, 10),
-              }
-            : null,
+          balance: balanceById.get(account.id) ?? 0n,
+          opening: opening ? { id: opening.id, totalAmount: opening.totalAmount, txnDate: opening.txnDate } : null,
         };
       });
+  }
+
+  /**
+   * F-09 / AC-09.1: create an account for the caller. The name check and the insert run in
+   * one transaction; the unique `(user_id, name)` index decides two concurrent creates (BR-14).
+   */
+  async createAccount(userId: string, dto: CreateAccountBodyDto): Promise<AccountView> {
+    try {
+      const created = await prisma.$transaction(async (tx) => {
+        await assertNameFree(tx, userId, dto.name);
+        return tx.account.create({
+          data: { userId, name: dto.name, type: dto.type, subtype: dto.subtype ?? null },
+          select: { id: true },
+        });
+      });
+      return await this.getAccountView(userId, created.id);
+    } catch (error) {
+      throw mapDuplicateName(error);
+    }
+  }
+
+  /**
+   * F-09 / AC-09.4 to AC-09.8: rename and/or archive or unarchive the caller's account. Another
+   * user's id is 404 (BR-01). Archiving never touches transactions, so the balance and history
+   * stay (BR-14); repeating the same change is accepted and changes nothing.
+   */
+  async updateAccount(userId: string, accountId: string, dto: UpdateAccountBodyDto): Promise<AccountView> {
+    try {
+      await prisma.$transaction(async (tx) => {
+        const account = await tx.account.findFirst({
+          where: { id: accountId, userId },
+          select: { id: true, name: true },
+        });
+        if (!account) {
+          throw new AppError(404, 'NOT_FOUND', 'Account not found');
+        }
+        if (dto.name !== undefined && dto.name !== account.name) {
+          await assertNameFree(tx, userId, dto.name);
+        }
+        await tx.account.update({
+          where: { id: account.id },
+          data: {
+            ...(dto.name !== undefined ? { name: dto.name } : {}),
+            ...(dto.isArchived !== undefined ? { isArchived: dto.isArchived } : {}),
+          },
+        });
+      });
+      return await this.getAccountView(userId, accountId);
+    } catch (error) {
+      throw mapDuplicateName(error);
+    }
+  }
+
+  /**
+   * One account in the `GET /accounts` shape, with its derived balance (f-09 §2.1). It runs after
+   * the write's transaction has committed and only shapes the response: every check already ran
+   * inside that transaction, so this read does not split the check-and-write unit.
+   */
+  private async getAccountView(userId: string, accountId: string): Promise<AccountView> {
+    const account = (await this.listAccounts(userId)).find((item) => item.id === accountId);
+    if (!account) {
+      throw new AppError(404, 'NOT_FOUND', 'Account not found');
+    }
+    return account;
+  }
+}
+
+/** BR-14: names are unique per user, compared exactly after trimming (the index is case-sensitive). */
+async function assertNameFree(tx: Prisma.TransactionClient, userId: string, name: string): Promise<void> {
+  const existing = await tx.account.findFirst({ where: { userId, name }, select: { id: true } });
+  if (existing) {
+    throw accountNameExistsError();
   }
 }
 

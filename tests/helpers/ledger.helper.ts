@@ -1,8 +1,8 @@
 /**
- * Ledger fixtures written straight to Postgres. Voided rows have no endpoint until F-13, and
+ * Ledger fixtures written straight to Postgres, so a fixture needs no API call (voided rows included), and
  * fixed dates keep expected figures stable. Every row respects the DB constraints and composite FKs.
  */
-import { AccountType, TransactionKind } from '@prisma/client';
+import { AccountSubtype, AccountType, TransactionKind } from '@prisma/client';
 import { prisma } from '../../server/src/prisma.js';
 import type { LedgerAccount, LedgerTransaction } from '../../server/src/services/balance.engine.js';
 
@@ -12,6 +12,27 @@ export type AccountIds = Record<string, string>;
 export async function accountIdsByName(userId: string): Promise<AccountIds> {
   const accounts = await prisma.account.findMany({ where: { userId }, select: { id: true, name: true } });
   return Object.fromEntries(accounts.map((a) => [a.name, a.id]));
+}
+
+/**
+ * Insert an account straight into Postgres, optionally archived (f-11 TEST-11.5: a feature that does
+ * not depend on F-09 sets up its accounts here rather than through POST /accounts).
+ */
+export async function insertAccount(
+  userId: string,
+  account: { name: string; type: AccountType; subtype?: AccountSubtype | null; isArchived?: boolean }
+): Promise<string> {
+  const created = await prisma.account.create({
+    data: {
+      userId,
+      name: account.name,
+      type: account.type,
+      subtype: account.subtype ?? null,
+      isArchived: account.isArchived ?? false,
+    },
+    select: { id: true },
+  });
+  return created.id;
 }
 
 export interface LedgerEventInput {

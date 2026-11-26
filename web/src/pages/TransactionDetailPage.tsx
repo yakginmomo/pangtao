@@ -1,15 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { AppShell } from '../components/AppShell';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { Icon } from '../components/Icon';
-import { TransactionKindBadge } from '../components/TransactionKindBadge';
+import { TransactionKindBadge, VoidedBadge } from '../components/TransactionKindBadge';
+import { VoidTransactionDialog } from '../components/VoidTransactionDialog';
 import { useAuth } from '../context/AuthContext';
 import { fetchTransaction, transactionsQueryKey } from '../api/transactions.api';
 import { errorCode, errorMessage } from '../api/http';
 import { formatSatang } from '../utils/money';
-import { formatCalendarDate } from '../utils/date';
+import { bangkokToday, formatCalendarDate } from '../utils/date';
 import { colors, font, radius, space } from '../styles/theme';
 
 const cardStyle: React.CSSProperties = {
@@ -36,6 +37,9 @@ const labelStyle: React.CSSProperties = {
   color: colors.textMuted,
 };
 
+/** An ISO timestamp as the Bangkok calendar day it fell on, e.g. `27 Nov 2026`. */
+const formatTimestampDate = (iso: string): string => formatCalendarDate(bangkokToday(new Date(iso)));
+
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div style={{ minWidth: 0 }}>
     <span style={labelStyle}>{label}</span>
@@ -43,10 +47,16 @@ const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, 
   </div>
 );
 
-/** f-07 workflow step 5 / FR-25: one transaction with every allocation line and its note. */
+/**
+ * f-07 workflow step 5 / FR-25: one transaction with every allocation line and its note.
+ * f-13 §2.2: Edit and Void for an active Payment or Receipt; a voided one is marked and has no
+ * actions; an opening balance points to the Dashboard.
+ */
 export const TransactionDetailPage: React.FC = () => {
   const { id = '' } = useParams();
   const { refetchUser } = useAuth();
+  const [confirmingVoid, setConfirmingVoid] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const detailQuery = useQuery({
     queryKey: [...transactionsQueryKey, 'detail', id],
     queryFn: () => fetchTransaction(id),
@@ -60,6 +70,10 @@ export const TransactionDetailPage: React.FC = () => {
   // A malformed id (400) and another user's or unknown id (404) both mean "nothing to show here".
   const notFound = code === 'NOT_FOUND' || code === 'VALIDATION_ERROR';
   const transaction = detailQuery.data;
+  const voided = transaction?.voidedAt != null;
+  const editable = transaction !== undefined && !voided && transaction.kind !== 'OPENING_BALANCE';
+  const edited = transaction !== undefined && Date.parse(transaction.updatedAt) > Date.parse(transaction.createdAt);
+  const struck: React.CSSProperties = voided ? { textDecoration: 'line-through', color: colors.textMuted } : {};
 
   return (
     <AppShell>
@@ -75,6 +89,12 @@ export const TransactionDetailPage: React.FC = () => {
         <h2 style={{ fontSize: font.size['2xl'], fontWeight: font.weight.semibold, color: colors.textPrimary, margin: `${space[3]} 0 ${space[6]}` }}>
           Transaction detail
         </h2>
+
+        {notice && (
+          <div role="status" data-testid="transaction-notice" className="pt-error-banner">
+            {notice}
+          </div>
+        )}
 
         {detailQuery.isError && !notFound && !detailQuery.isFetching && (
           <ErrorBanner
@@ -96,11 +116,23 @@ export const TransactionDetailPage: React.FC = () => {
         ) : transaction ? (
           <section data-testid="transaction-detail" className="pt-card" style={cardStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: space[3], flexWrap: 'wrap' }}>
-              <TransactionKindBadge kind={transaction.kind} />
-              <span style={{ fontSize: font.size.xl, fontWeight: font.weight.bold, fontVariantNumeric: 'tabular-nums' }}>
+              <span style={{ display: 'inline-flex', gap: space[2], flexWrap: 'wrap' }}>
+                <TransactionKindBadge kind={transaction.kind} />
+                {voided && <VoidedBadge testId="transaction-voided-badge" />}
+              </span>
+              <span
+                data-testid="transaction-total"
+                style={{ fontSize: font.size.xl, fontWeight: font.weight.bold, fontVariantNumeric: 'tabular-nums', ...struck }}
+              >
                 {formatSatang(transaction.totalAmount)}
               </span>
             </div>
+            {(voided || edited) && (
+              <p style={{ margin: 0, fontSize: font.size.sm, color: colors.textMuted, display: 'flex', gap: space[3], flexWrap: 'wrap' }}>
+                {voided && <span data-testid="transaction-voided-on">Voided on {formatTimestampDate(transaction.voidedAt!)}</span>}
+                {edited && <span data-testid="transaction-edited">Edited {formatTimestampDate(transaction.updatedAt)}</span>}
+              </p>
+            )}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(12rem, 100%), 1fr))', gap: space[4] }}>
               <Field label="Date">{formatCalendarDate(transaction.txnDate)}</Field>
               <Field label="Source account">{transaction.accountName}</Field>
@@ -132,7 +164,7 @@ export const TransactionDetailPage: React.FC = () => {
                         <span style={{ display: 'block', color: colors.textPrimary }}>{line.targetAccountName}</span>
                         {line.note && <span style={{ display: 'block', fontSize: font.size.sm, color: colors.textMuted }}>{line.note}</span>}
                       </span>
-                      <span style={{ fontWeight: font.weight.semibold, fontVariantNumeric: 'tabular-nums' }}>
+                      <span style={{ fontWeight: font.weight.semibold, fontVariantNumeric: 'tabular-nums', ...struck }}>
                         {formatSatang(line.amount)}
                       </span>
                     </li>
@@ -140,9 +172,36 @@ export const TransactionDetailPage: React.FC = () => {
                 </ul>
               )}
             </div>
+
+            {transaction.kind === 'OPENING_BALANCE' && (
+              <p data-testid="transaction-opening-note" style={{ margin: 0, fontSize: font.size.sm, color: colors.textSecondary }}>
+                Change it from the Dashboard
+              </p>
+            )}
+            {editable && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: space[2], flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  data-testid="transaction-void"
+                  onClick={() => {
+                    setNotice(null);
+                    setConfirmingVoid(true);
+                  }}
+                  className="pt-pill-btn"
+                >
+                  Void
+                </button>
+                <Link to={`/transactions/${transaction.id}/edit`} data-testid="transaction-edit" className="pt-btn-primary" style={{ textDecoration: 'none' }}>
+                  Edit
+                </Link>
+              </div>
+            )}
           </section>
         ) : null}
       </div>
+      {confirmingVoid && transaction && (
+        <VoidTransactionDialog transaction={transaction} onClose={() => setConfirmingVoid(false)} onConflict={setNotice} />
+      )}
     </AppShell>
   );
 };

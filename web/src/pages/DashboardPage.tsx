@@ -4,13 +4,16 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { AppShell } from '../components/AppShell';
 import { ErrorBanner } from '../components/ErrorBanner';
+import { Amount } from '../components/Amount';
 import { Icon } from '../components/Icon';
 import { OpeningBalanceDialog } from '../components/OpeningBalanceDialog';
+import { RemoveOpeningBalanceDialog } from '../components/RemoveOpeningBalanceDialog';
 import { accountsQueryKey, fetchAccounts } from '../api/accounts.api';
 import { transactionsQueryKey } from '../api/transactions.api';
 import { fetchSummary, summaryQueryKey } from '../api/summary.api';
+import { loansQueryKey } from '../api/loans.api';
 import { errorCode, errorMessage } from '../api/http';
-import { Account, AccountType, OpeningBalanceTransaction } from '../types/account.types';
+import { Account, AccountType, OpeningBalanceTransaction, VoidedOpeningBalanceTransaction } from '../types/account.types';
 import { formatSatang, formatSignedSatang } from '../utils/money';
 import { formatCalendarDate, monthRange } from '../utils/date';
 import { colors, font, radius, space } from '../styles/theme';
@@ -115,39 +118,13 @@ const IconTile: React.FC<{ name: string; fg: string; size?: number }> = ({ name,
   </span>
 );
 
-const NegativeLabel: React.FC = () => (
-  <span
-    style={{
-      fontSize: font.size.xs,
-      fontWeight: font.weight.semibold,
-      color: '#8B2525',
-      backgroundColor: '#FBEAEA',
-      borderRadius: radius.full,
-      padding: '0.1rem 0.5rem',
-      whiteSpace: 'nowrap',
-    }}
-  >
-    Negative balance
-  </span>
-);
-
-const Amount: React.FC<{ satang: number; size: string; testId?: string }> = ({ satang, size, testId }) => (
-  <span style={{ display: 'inline-flex', alignItems: 'center', gap: space[2], flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-    <span
-      data-testid={testId}
-      style={{ fontSize: size, fontWeight: font.weight.bold, color: colors.textPrimary, fontVariantNumeric: 'tabular-nums' }}
-    >
-      {formatSatang(satang)}
-    </span>
-    {satang < 0 && <NegativeLabel />}
-  </span>
-);
-
 const SectionCard: React.FC<{
   section: (typeof SECTIONS)[number];
   accounts: Account[];
   onSetOpeningBalance: (account: Account) => void;
-}> = ({ section, accounts, onSetOpeningBalance }) => {
+  onEditOpeningBalance: (account: Account) => void;
+  onRemoveOpeningBalance: (account: Account) => void;
+}> = ({ section, accounts, onSetOpeningBalance, onEditOpeningBalance, onRemoveOpeningBalance }) => {
   const total = accounts.reduce((sum, account) => sum + account.balance, 0);
   const headingId = `dashboard-section-${section.key}-title`;
 
@@ -218,13 +195,38 @@ const SectionCard: React.FC<{
                     <span style={{ fontSize: font.size.xs, color: colors.textMuted }}>{SUBTYPE_LABEL[account.subtype]}</span>
                   )}
                   {account.openingBalance ? (
-                    <span
-                      data-testid={`opening-balance-info-${account.name}`}
-                      style={{ fontSize: font.size.xs, color: colors.textMuted }}
-                    >
-                      Opening balance {formatSatang(account.openingBalance.amount)} on{' '}
-                      {formatCalendarDate(account.openingBalance.date)}
-                    </span>
+                    <>
+                      <span
+                        data-testid={`opening-balance-info-${account.name}`}
+                        style={{ fontSize: font.size.xs, color: colors.textMuted }}
+                      >
+                        Opening balance {formatSatang(account.openingBalance.amount)} on{' '}
+                        {formatCalendarDate(account.openingBalance.date)}
+                      </span>
+                      {/* f-12 §2.2: active accounts can correct or remove it; archived ones show the text only. */}
+                      {!account.isArchived && (
+                        <>
+                          <button
+                            type="button"
+                            className="pt-pill-btn"
+                            data-testid={`edit-opening-balance-${account.name}`}
+                            aria-label={`Edit opening balance for ${account.name}`}
+                            onClick={() => onEditOpeningBalance(account)}
+                          >
+                            Edit opening balance
+                          </button>
+                          <button
+                            type="button"
+                            className="pt-pill-btn"
+                            data-testid={`remove-opening-balance-${account.name}`}
+                            aria-label={`Remove opening balance for ${account.name}`}
+                            onClick={() => onRemoveOpeningBalance(account)}
+                          >
+                            Remove
+                          </button>
+                        </>
+                      )}
+                    </>
                   ) : account.isArchived ? null : (
                     <button
                       type="button"
@@ -384,6 +386,12 @@ export const DashboardPage: React.FC = () => {
   const accountsQuery = useQuery({ queryKey: accountsQueryKey, queryFn: fetchAccounts });
   const queryClient = useQueryClient();
   const [openingAccount, setOpeningAccount] = useState<Account | null>(null);
+  const [openingMode, setOpeningMode] = useState<'create' | 'edit'>('create');
+  const [removingAccount, setRemovingAccount] = useState<Account | null>(null);
+  const startOpening = (mode: 'create' | 'edit') => (account: Account) => {
+    setOpeningMode(mode);
+    setOpeningAccount(account);
+  };
 
   // An expired session re-checks the user, and the route guard then sends them to /login.
   const unauthenticated = errorCode(accountsQuery.error) === 'UNAUTHENTICATED';
@@ -391,9 +399,19 @@ export const DashboardPage: React.FC = () => {
     if (unauthenticated) void refetchUser();
   }, [unauthenticated, refetchUser]);
 
+  /** Every opening-balance write moves balances, history, the summary and the Loans page. */
+  const invalidateAfterOpeningChange = () => {
+    void queryClient.invalidateQueries({ queryKey: accountsQueryKey });
+    void queryClient.invalidateQueries({ queryKey: transactionsQueryKey });
+    void queryClient.invalidateQueries({ queryKey: summaryQueryKey });
+    // An opening balance on a Loan Given or Loan Taken account moves the Loans page (f-10 §2.2).
+    void queryClient.invalidateQueries({ queryKey: loansQueryKey });
+  };
+
   /**
-   * f-04 §2.2: an opening balance always adds to these three account types' derived
-   * balances, so the card updates immediately; the refetch then confirms the server value.
+   * f-04 §2.2 and f-12: an opening balance always adds to these three account types' derived
+   * balances, so the card updates immediately by the change in the opening amount (the whole
+   * amount for a new one); the refetch then confirms the server value.
    */
   const handleOpeningSaved = (transaction: OpeningBalanceTransaction) => {
     queryClient.setQueryData<Account[]>(accountsQueryKey, (accounts) =>
@@ -401,7 +419,7 @@ export const DashboardPage: React.FC = () => {
         account.id === transaction.accountId
           ? {
               ...account,
-              balance: account.balance + transaction.totalAmount,
+              balance: account.balance + transaction.totalAmount - (account.openingBalance?.amount ?? 0),
               openingBalance: {
                 transactionId: transaction.id,
                 amount: transaction.totalAmount,
@@ -412,9 +430,20 @@ export const DashboardPage: React.FC = () => {
       )
     );
     setOpeningAccount(null);
-    void queryClient.invalidateQueries({ queryKey: accountsQueryKey });
-    void queryClient.invalidateQueries({ queryKey: transactionsQueryKey });
-    void queryClient.invalidateQueries({ queryKey: summaryQueryKey });
+    invalidateAfterOpeningChange();
+  };
+
+  /** f-12 §1 step 3: the removed amount leaves the balance and Set opening balance returns. */
+  const handleOpeningRemoved = (transaction: VoidedOpeningBalanceTransaction) => {
+    queryClient.setQueryData<Account[]>(accountsQueryKey, (accounts) =>
+      accounts?.map((account) =>
+        account.id === transaction.accountId
+          ? { ...account, balance: account.balance - transaction.totalAmount, openingBalance: null }
+          : account
+      )
+    );
+    setRemovingAccount(null);
+    invalidateAfterOpeningChange();
   };
 
   return (
@@ -456,7 +485,9 @@ export const DashboardPage: React.FC = () => {
                 key={section.key}
                 section={section}
                 accounts={accountsQuery.data.filter((account) => account.type === section.type)}
-                onSetOpeningBalance={setOpeningAccount}
+                onSetOpeningBalance={startOpening('create')}
+                onEditOpeningBalance={startOpening('edit')}
+                onRemoveOpeningBalance={setRemovingAccount}
               />
             ))}
           </div>
@@ -468,8 +499,16 @@ export const DashboardPage: React.FC = () => {
       {openingAccount && (
         <OpeningBalanceDialog
           account={openingAccount}
+          mode={openingMode}
           onClose={() => setOpeningAccount(null)}
           onSaved={handleOpeningSaved}
+        />
+      )}
+      {removingAccount && (
+        <RemoveOpeningBalanceDialog
+          account={removingAccount}
+          onClose={() => setRemovingAccount(null)}
+          onRemoved={handleOpeningRemoved}
         />
       )}
     </AppShell>

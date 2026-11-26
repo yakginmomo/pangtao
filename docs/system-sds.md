@@ -89,16 +89,19 @@ Income and expense summaries read only lines whose target account type is Income
 | Screen | Route | Role | Purpose |
 |---|---|---|---|
 | Login | /login | Anonymous | Email and password sign-in |
-| Dashboard | / | User | Balances grouped by account type; current-month income and expense; opening balance action per account |
-| Transactions | /transactions | User | Paginated history (filters arrive in Sprint 3) |
-| Transaction detail | /transactions/:id | User | One transaction with its allocation lines |
-| New transaction | /transactions/new | User | Pay and Receive tabs with an allocation-lines editor |
+| Dashboard | / | User | Balances grouped by account type; current-month income and expense; per account, set an opening balance (F-04) or edit or remove it (F-12) |
+| Transactions | /transactions | User | Paginated history (filters arrive in Sprint 3); a voided transaction keeps its place with a Voided badge and a struck-through total (F-13) |
+| Transaction detail | /transactions/:id | User | One transaction with its allocation lines; Edit and Void for an active Payment or Receipt, "Voided on" and "Edited" marks, and a pointer to the Dashboard for an opening balance (F-13) |
+| Edit transaction | /transactions/:id/edit | User | The New transaction form pre-filled, with the kind fixed; Save waits for a change (F-13) |
+| New transaction | /transactions/new | User | Pay and Receive tabs with an allocation-lines editor; `?tab=payment\|receive` opens a tab, and target groups name each line's meaning (for example Lend, Borrow, Loan repayment; F-10; Transfer to and Transfer from another Cash account; F-11) |
 | Summary | /summary | User | Income, expense and net for a date range |
+| Accounts | /accounts | User | Create, rename, archive and unarchive accounts (F-09) |
+| Loans | /loans | User | Owed to me and I owe, with balances and totals, including card debt; Lend, Borrow and repayment shortcuts (F-10) |
 | Users | /admin/users | Administrator | List users; enable or disable |
 
-Sprint 2 and 3 add Accounts, Loans, Favorites and Reports screens in the same navigation.
+Sprint 2 adds the Accounts (F-09) and Loans (F-10) screens to the navigation; Sprint 3 adds Favorites and Reports screens in the same way.
 
-**Navigation.** A top bar shows the brand, a role-based menu (User: Dashboard, Transactions, Summary; Administrator: Users), the current user’s name and Log out. A route guard sends unauthenticated visitors to /login and shows a Not permitted page for the wrong role. After login, a User lands on the Dashboard and an Administrator on Users.
+**Navigation.** A top bar shows the brand, a role-based menu (User: Dashboard, Accounts, History, Summary, Loans; Administrator: Users), the current user’s name and Log out. A route guard sends unauthenticated visitors to /login and shows a Not permitted page for the wrong role. After login, a User lands on the Dashboard and an Administrator on Users.
 
 **Shared behavior.**
 
@@ -113,7 +116,7 @@ Sprint 2 and 3 add Accounts, Loans, Favorites and Reports screens in the same na
 
 - Base path `/api/v1`; JSON; plural resource nouns; GET reads, POST creates, PATCH updates part of a resource.
 - IDs are UUID strings, dates are `YYYY-MM-DD`, amounts are integer satang. The client never sends a user id or role; both come from the session.
-- Status codes: 200, 201, 204; 400 invalid input or violated business rule (with a specific error code); 401 not logged in; 403 wrong role; 404 not found, including another user’s record; 409 state conflict (for example, a second opening balance); 429 too many login attempts; 500 generic.
+- Status codes: 200, 201, 204; 400 invalid input or violated business rule (with a specific error code); 401 not logged in; 403 wrong role; 404 not found, including another user’s record; 409 state conflict (for example, a second opening balance, or editing or voiding a voided transaction); 429 too many login attempts; 500 generic.
 - Error body: `error: { code, message, details[] }`, where details name the field and the issue. Unexpected errors return a generic message and an `X-Request-Id` header; the stack trace and SQL stay in server logs only.
 - Lists use `limit` (default 50, maximum 100) and `offset`, and return `items`, `total`, `limit`, `offset`. The account list is the exception: it is bounded per user and returns `{ items }` only.
 
@@ -124,11 +127,18 @@ Sprint 2 and 3 add Accounts, Loans, Favorites and Reports screens in the same na
 | POST /auth/logout | any logged-in | End session |
 | GET /auth/me | any logged-in | Current user |
 | GET /accounts | User | Own accounts with balances |
+| POST /accounts | User | Create an account (name, type, optional subtype) |
+| PATCH /accounts/:id | User | Rename, archive or unarchive an account |
 | POST /accounts/:id/opening-balance | User | Record opening balance |
-| POST /transactions | User | Create Payment or Receipt with lines |
-| GET /transactions | User | History |
-| GET /transactions/:id | User | One transaction with lines |
+| PATCH /accounts/:id/opening-balance | User | Correct the amount or date of the opening balance in place (F-12) |
+| POST /accounts/:id/opening-balance/void | User | Remove the opening balance by voiding it (F-12) |
+| POST /transactions | User | Create Payment or Receipt with lines; a line to another Cash account is a transfer (F-11) |
+| PATCH /transactions/:id | User | Replace a Payment or Receipt with its full new version; the kind is fixed (F-13) |
+| POST /transactions/:id/void | User | Void a Payment or Receipt; it stays in history (F-13) |
+| GET /transactions | User | History, voided transactions included and marked (F-13) |
+| GET /transactions/:id | User | One transaction with lines, voided or not |
 | GET /summary/income-expense?from&to | User | Income, expense, net |
+| GET /loans | User | Outstanding Loan Given and Loan Taken balances with totals, including card debt (F-10) |
 | GET /admin/users | Administrator | List users |
 | PATCH /admin/users/:id | Administrator | Enable or disable (isActive) |
 
@@ -141,13 +151,16 @@ Feature contracts give full request, response and error shapes.
 | Log in | Allow | Allow | Allow | Own credentials |
 | Log out, view current user | 401 | Allow | Allow | Own session |
 | View accounts and balances | 401 | Allow | 403 | Own accounts only |
-| Record opening balance | 401 | Allow | 403 | Own accounts only |
+| Create, rename or archive an account | 401 | Allow | 403 | Own accounts only; another user's account returns 404 |
+| Record, correct or remove an opening balance | 401 | Allow | 403 | Own accounts only; another user's account returns 404 |
 | Create or view transactions and history | 401 | Allow | 403 | Own records only; others return 404 |
+| Edit or void a transaction | 401 | Allow | 403 | Own Payments and Receipts only; others return 404 (F-13) |
 | View income and expense summary | 401 | Allow | 403 | Own data only |
+| View outstanding loans | 401 | Allow | 403 | Own accounts only |
 | List users | 401 | 403 | Allow | All users, non-financial fields only |
 | Enable or disable user | 401 | 403 | Allow, but not self | Any other user |
 
-Later features (account management, loans, transfers, edit and void, search, favorites, reports) follow the User rows; administrator user creation follows the Administrator rows. Access is default-deny, and hiding a control in the UI is never treated as authorization.
+Account management (F-09), loans (F-10), transfers (F-11, through `POST /transactions`), opening-balance management (F-12) and edit and void (F-13) follow the User rows, and so will the later features (search, favorites, reports); administrator user creation follows the Administrator rows. Access is default-deny, and hiding a control in the UI is never treated as authorization.
 
 ## 6. Authentication and session design
 
