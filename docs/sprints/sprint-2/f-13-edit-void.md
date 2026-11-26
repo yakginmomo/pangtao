@@ -79,11 +79,12 @@ The F-07 demo ledger (`insertDemoLedger` in `tests/helpers/ledger.helper.ts`) al
 |---|---|---|
 | TEST-07.1 | `total: 4`; items repayment, card charge, salary, opening; `not.toContain(voidedTransactionId)`; item keys without `voidedAt`/`updatedAt` | `total: 5`; items voided payment, repayment, card charge, salary, opening; the voided item has `voidedAt` set and the other four `voidedAt: null`; item keys include `voidedAt` and `updatedAt` |
 | TEST-07.2 | `?limit=2&offset=2` → `total: 4`, items salary, opening | `total: 5`, items card charge, salary (the voided row now takes position 1) |
+| TEST-07.3 | `GET /transactions/{card charge}` → keys equal `ITEM_KEYS` (no `voidedAt`/`updatedAt`) | keys include `voidedAt` and `updatedAt` (through the shared `ITEM_KEYS`), with `voidedAt: null` for the card charge |
 | "a malformed transaction id returns 400 … and an offset past the end returns an empty page" | `?offset=10` → `total: 4` | `total: 5` |
 | "a voided transaction is not returned by id (f-07 1.1 §1)" | 404 | Renamed to "a voided transaction is returned by id, marked as voided (f-07 1.2)": 200 with `voidedAt` set |
-| "transactions tied on date and creation time page in a stable id order …" (index plan check) | `EXPLAIN` of the query with `voided_at IS NULL` | `EXPLAIN` of the new history query without the voided filter; still uses `transactions_user_id_txn_date_created_at_idx` |
+| "the history query uses ${HISTORY_INDEX} on a realistic ledger (f-07 §5)" | `EXPLAIN` of the query with `voided_at IS NULL` | `EXPLAIN` of the new history query without the voided filter; still uses `transactions_user_id_txn_date_created_at_idx` |
 
-The comment in that file's `beforeEach` ("one voided 5,000.00 payment that history must not list") is updated to match. Balances (`accounts.api.test.ts` TEST-03.3) and summaries (`summary.api.test.ts` TEST-08.3) still exclude the voided row and do not change.
+The comment in that file's `beforeEach` ("one voided 5,000.00 payment that history must not list") is updated to match. Balances (`accounts.api.test.ts` TEST-03.3) and summaries (`summary.api.test.ts` TEST-08.3) still exclude the voided row and do not change; nor does "transactions tied on date and creation time page in a stable id order …", whose two rows are dated 1 Feb, newer than the voided 28 Jan row, so they stay at offsets 0 and 1.
 
 ---
 
