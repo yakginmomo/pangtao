@@ -2,7 +2,7 @@
 
 This folder holds the reproducibility package for Part A of Deliverable 2. The assessed
 candidate, counts and dates are recorded in
-[`../part-a-sprint-1-continuity.md`](../part-a-sprint-1-continuity.md); this file only says how
+[`../part-a-sprint-1-continuity.md`](../../part-a-sprint-1-continuity.md); this file only says how
 to reproduce the evidence and what each file contains.
 
 ## Assessed version
