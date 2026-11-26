@@ -1,6 +1,6 @@
 # F-09 Account Management: Engineering Contract
 
-Requirements: FR-09; BR-01, BR-02, BR-14 · Depends on: F-03 · Issue: #57 · Contract version: 1.0 (see [version history](README.md#6-contract-version-history)) · Suggested branch: `feature/F-09-account-management`
+Requirements: FR-09; BR-01, BR-02, BR-14; NFR-02, NFR-08 · Depends on: F-03 · Issue: #57 · Contract version: 1.0 (see [version history](README.md#6-contract-version-history)) · Suggested branch: `feature/F-09-account-management`
 
 Shared conventions and error codes are in [Sprint 1 README](../sprint-1/README.md) §2 and [Sprint 2 README](README.md) §2; the Sprint 2 Definition of Done is in [Sprint 2 README](README.md) §5.
 
@@ -26,7 +26,7 @@ Shared conventions and error codes are in [Sprint 1 README](../sprint-1/README.m
 - **Type:** one of `CASH`, `LOAN_TAKEN`, `LOAN_GIVEN`, `INCOME`, `EXPENSE`. Anything else returns `400 VALIDATION_ERROR`.
 - **BR-14 (valid subtype):** `subtype` is optional. For `CASH` it may be `WALLET` or `BANK`; for `LOAN_TAKEN`, `CREDIT_CARD` or `OTHER`; for `LOAN_GIVEN`, `INCOME` and `EXPENSE` it must be absent or `null`. Any other pair returns `400 VALIDATION_ERROR` with `details[0].field = "subtype"` (the `accounts_subtype_valid` CHECK constraint is the database backstop).
 - **BR-14 (type and subtype are fixed):** `PATCH` accepts only `name` and `isArchived`. A body containing `type`, `subtype` or any other field returns `400 VALIDATION_ERROR` and changes nothing; so does an empty body.
-- **Archive (Q-2):** any account may be archived whatever its balance (D-02 already allows any balance); its transactions, balance and summary contributions are unchanged.
+- **Archive (Q-2):** any account may be archived whatever its balance; the confirmation shows the balance so the User decides knowingly. Its transactions, balance and summary contributions are unchanged.
 - **Unarchive (Q-3):** `PATCH { "isArchived": false }` makes the account usable again. Archiving an archived account or unarchiving an active one is accepted and changes nothing (200, idempotent).
 - **BR-14 (archived accounts in use):** unchanged from Sprint 1 and re-verified here: an archived account as a Payment/Receipt source or opening-balance account returns `400 VALIDATION_ERROR`; as a line target, `400 INVALID_TARGET_ACCOUNT` (BR-06). An archived account can still be renamed (S2-D5).
 - **BR-01:** `PATCH` on an id that is unknown or owned by another user returns `404 NOT_FOUND`. The server takes the owner from the session; the body never carries a user id.

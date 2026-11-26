@@ -14,11 +14,11 @@ Sprint 2 is the core expansion (plan.md §1): a User manages their own accounts,
 
 | ID | Feature | Issue | Contract document | Linked requirements | Depends on | Owner |
 |---|---|---|---|---|---|---|
-| **F-09** | Account management | #57 | [f-09-account-management.md](f-09-account-management.md) | FR-09; BR-01, 02, 14 | F-03 | Chawin |
-| **F-10** | Loans | #60 | [f-10-loans.md](f-10-loans.md) | FR-14, 21; BR-01, 02, 05–08, 10, 14, 16 | F-05, F-06, F-09 | Chawin |
-| **F-11** | Transfers | #58 | [f-11-transfers.md](f-11-transfers.md) | FR-15; BR-01, 02, 05–08, 10, 14 | F-05, F-06 | Supichaya |
-| **F-12** | Opening balance management | #59 | [f-12-opening-balance-management.md](f-12-opening-balance-management.md) | FR-11; BR-01, 02, 04, 10, 11, 14 | F-04 | Supichaya |
-| **F-13** | Edit and void transactions | #61 | [f-13-edit-void.md](f-13-edit-void.md) | FR-16; BR-01, 02, 04–07, 10, 12, 14, 16 | F-05, F-06, F-07 | Supichaya |
+| **F-09** | Account management | #57 | [f-09-account-management.md](f-09-account-management.md) | FR-09; BR-01, 02, 14; NFR-02, 08 | F-03 | Chawin |
+| **F-10** | Loans | #60 | [f-10-loans.md](f-10-loans.md) | FR-14, 21; BR-01, 02, 04–08, 10, 14, 16; NFR-02, 03, 08 | F-05, F-06, F-09 | Chawin |
+| **F-11** | Transfers | #58 | [f-11-transfers.md](f-11-transfers.md) | FR-15; BR-01, 02, 04–08, 10, 14; NFR-03, 08 | F-05, F-06 | Supichaya |
+| **F-12** | Opening balance management | #59 | [f-12-opening-balance-management.md](f-12-opening-balance-management.md) | FR-11; BR-01, 02, 04, 10, 11, 14; NFR-02, 03, 08 | F-04 | Supichaya |
+| **F-13** | Edit and void transactions | #61 | [f-13-edit-void.md](f-13-edit-void.md) | FR-16; BR-01, 02, 04–07, 10, 12, 14, 16; NFR-02, 03, 08 | F-05, F-06, F-07 | Supichaya |
 
 The owner drives the implementation; the other student reviews the PR. Chawin writes the Sprint 2 contracts and Supichaya reviews them; Supichaya writes the Sprint 3 contracts (F-14 to F-18) and Chawin reviews them, so neither student holds a permanent specification or coding role. All five Sprint 2 contracts are merged into `sprint-2-staging` before the first failing test of any Sprint 2 feature.
 
@@ -66,7 +66,7 @@ The rows marked Sprint 2 in SRS §4 are added to the allowed-target tables. Each
 | Receipt | Cash | Loan Taken | New borrowing | **F-10** |
 | Receipt | Cash | another Cash | Transfer in | **F-11** |
 
-A Loan Taken source still accepts Expense lines only, and every other row uses a Cash source (Q-1, settled in F-10; SRS §4 wording v2.1). After Sprint 2 a Cash Payment may target any type except Income, and a Receipt may target any type except Expense.
+A Loan Taken source still accepts Expense lines only, and every other row uses a Cash source (Q-1, settled in F-10). This narrows SRS §4, which limited the card source to Expense lines only "in Sprint 1"; it is recorded as requirement revision v2.1 in traceability §2. After Sprint 2 a Cash Payment may target any type except Income, and a Receipt may target any type except Expense.
 
 ### 2.3 Planned API surface
 
@@ -95,7 +95,7 @@ Every route above is User-only: Administrator 403, anonymous 401, another user's
 | S2-D3 | A transfer is a Payment or Receipt line to another Cash account (FR-15 "on either form"), not a new transaction kind. | No schema change; the balance engine and BR-08 already treat it correctly. |
 | S2-D4 | An edit replaces the transaction's fields and lines in one database transaction and re-runs every create-time rule (BR-04–07, 10, 14, 16) on the new version, with the two exceptions in S2-D6. | BR-07: balances are derived, so an edit must leave the ledger as if the new version had been saved originally. |
 | S2-D5 | An archived account keeps its history and balance and can be renamed; it cannot be newly used as a source or target. | BR-14. |
-| S2-D6 | An edit may keep values the saved version already had even if a rule would now reject them: an unchanged date older than T−90, and an account the transaction already used that has since been archived. A changed date and a newly chosen account must pass the rules. | Fixing a memo or an amount on an older row must not force the user to re-date it or un-archive an account; nothing new is backdated (BR-10) or newly attached to an archived account (BR-14). |
+| S2-D6 | An edit may keep values the saved version already had even if a rule would now reject them: an unchanged date older than T−90, and an account the transaction already used that has since been archived, kept in the same role (source stays source, line target stays line target). A changed date and a newly chosen or re-roled account must pass the rules. | Fixing a memo or an amount on an older row must not force the user to re-date it or un-archive an account; nothing new is backdated (BR-10) or newly attached to an archived account (BR-14). |
 
 ### 2.5 Open questions and how the contracts settle them
 
@@ -103,8 +103,8 @@ Each answer is recorded in the named contract and is open to challenge in its re
 
 | ID | Question | Answer | Settled in |
 |---|---|---|---|
-| Q-1 | May a Loan Taken source pay Loan Given or Cash targets (card cash advance, lending by card)? | No. A Loan Taken source accepts Expense lines only; lending and transfers use a Cash source. | F-10 §1 |
-| Q-2 | May an account with a non-zero balance be archived? | Yes (D-02 allows any balance); the confirmation shows the balance. | F-09 §1 |
+| Q-1 | May a Loan Taken source pay Loan Given or Cash targets (card cash advance, lending by card)? | No. A Loan Taken source accepts Expense lines only; lending and transfers use a Cash source. Requirement revision v2.1 (narrowed). | F-10 §1 |
+| Q-2 | May an account with a non-zero balance be archived? | Yes; the confirmation shows the balance. | F-09 §1 |
 | Q-3 | Can an archived account be unarchived? | Yes, with `PATCH { isArchived: false }`. | F-09 §1 |
 | Q-4 | Does the 90-day limit (BR-10) apply to the original date of a transaction being edited or voided? | Only a changed date is checked against the window (S2-D6). Voiding has no date limit. | F-13 §1 |
 | Q-5 | Can a voided transaction be edited or un-voided? | No: 409 `TRANSACTION_VOIDED`. Void is final; the user records a new transaction instead. | F-13 §1 |

@@ -1,6 +1,6 @@
 # F-10 Loans: Engineering Contract
 
-Requirements: FR-14, FR-21; BR-01, BR-02, BR-05, BR-06, BR-07, BR-08, BR-10, BR-14, BR-16 · Depends on: F-05, F-06, F-09 · Issue: #60 · Contract version: 1.0 (see [version history](README.md#6-contract-version-history)) · Suggested branch: `feature/F-10-loans`
+Requirements: FR-14, FR-21; BR-01, BR-02, BR-04, BR-05, BR-06, BR-07, BR-08, BR-10, BR-14, BR-16; NFR-02, NFR-03, NFR-08 · Depends on: F-05, F-06, F-09 · Issue: #60 · Contract version: 1.0 (see [version history](README.md#6-contract-version-history)) · Suggested branch: `feature/F-10-loans`
 
 Shared conventions and error codes are in [Sprint 1 README](../sprint-1/README.md) §2 and [Sprint 2 README](README.md) §2; the Sprint 2 Definition of Done is in [Sprint 2 README](README.md) §5.
 
@@ -22,13 +22,13 @@ Shared conventions and error codes are in [Sprint 1 README](../sprint-1/README.m
 **Rules and validation**
 
 - **BR-06 (matrix, Sprint 2):** a Cash Payment source may now target **Loan Given** (lending); a Cash Receipt may target **Loan Given** (repayment received) and **Loan Taken** (borrowing). Targets must differ from the source, belong to the caller and not be archived; otherwise `400 INVALID_TARGET_ACCOUNT`.
-- **Q-1 (settled):** a **Loan Taken** source (card charge) still accepts **Expense** lines only. Lending by card or moving card credit to Cash is not supported; such a line returns `400 INVALID_TARGET_ACCOUNT`. Reason: the stakeholder brief only needs card purchases, and every loan row in SRS §4 is then a Cash movement, which keeps the effects and the summary rules simple. SRS §4 is reworded in v2.1 to state this without "In Sprint 1".
+- **Q-1 (settled):** a **Loan Taken** source (card charge) still accepts **Expense** lines only. Lending by card or moving card credit to Cash is not supported; such a line returns `400 INVALID_TARGET_ACCOUNT`. Reason: the stakeholder brief only needs card purchases, and every loan row in SRS §4 is then a Cash movement, which keeps the effects and the summary rules simple. This is a **requirement revision** (baseline v2.1, requirement narrowed): SRS §4 said a card source accepts Expense lines only "in Sprint 1", which left later card rows open; v2.1 makes the Expense-only rule permanent. It is recorded in traceability §2 and approved through the review of this contract.
 - **BR-16:** unchanged. A Loan Given account is never a source; a Payment or Receipt from it returns `400 INVALID_SOURCE_ACCOUNT`.
 - **BR-07 (effects, already in the balance engine):** Payment line to Loan Given: owed + line. Receipt line to Loan Given: owed − line. Receipt line to Loan Taken: debt + line. Payment line to Loan Taken: debt − line.
 - **BR-08:** lending, borrowing and repayments in either direction are neither income nor expense; the summary is unchanged by them, and the NFR-03 invariant holds.
 - **D-02 (over-repayment):** receiving more than is owed, or repaying more than the debt, is allowed; the balance goes negative and is shown with a minus sign and "Negative balance".
 - **Outstanding loans (FR-21):** `GET /loans` lists every Loan Given account under `owedToMe` and every Loan Taken account (including credit cards) under `owedByMe`, except archived accounts whose balance is 0. Each list is ordered by name and has `total`, the sum of its balances in satang (a negative balance reduces it).
-- **BR-04, BR-05, BR-10, BR-14:** unchanged from F-05/F-06 and applied in the same order.
+- **BR-04, BR-05, BR-10, BR-14:** unchanged from F-05/F-06 and applied in the existing create-path order: request schema (BR-04), ownership (404), archived source, source type, line targets, future date, 90-day window, allocation sum (F-13 §1 S2-D4 lists it in full).
 
 **Permissions:** User only. Administrator receives 403 (BR-02), anonymous receives 401. `GET /loans` returns only the caller's accounts.
 

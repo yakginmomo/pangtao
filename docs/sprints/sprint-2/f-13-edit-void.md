@@ -1,6 +1,6 @@
 # F-13 Edit and Void Transactions: Engineering Contract
 
-Requirements: FR-16; BR-01, BR-02, BR-04, BR-05, BR-06, BR-07, BR-10, BR-12, BR-14, BR-16 · Depends on: F-05, F-06, F-07 · Issue: #61 · Contract version: 1.0 (see [version history](README.md#6-contract-version-history)) · Suggested branch: `feature/F-13-edit-void`
+Requirements: FR-16; BR-01, BR-02, BR-04, BR-05, BR-06, BR-07, BR-10, BR-12, BR-14, BR-16; NFR-02, NFR-03, NFR-08 · Depends on: F-05, F-06, F-07 · Issue: #61 · Contract version: 1.0 (see [version history](README.md#6-contract-version-history)) · Suggested branch: `feature/F-13-edit-void`
 
 Shared conventions and error codes are in [Sprint 1 README](../sprint-1/README.md) §2 and [Sprint 2 README](README.md) §2; the Sprint 2 Definition of Done is in [Sprint 2 README](README.md) §5.
 
@@ -19,8 +19,20 @@ Shared conventions and error codes are in [Sprint 1 README](../sprint-1/README.m
 
 **Rules and validation**
 
-- **S2-D4 (edit = save the new version):** the request carries the full new version (`accountId`, `txnDate`, `totalAmount`, `memo`, `lines`). The server runs the create-time rules of F-05/F-06 (and the Sprint 2 matrix of F-10/F-11) on it in the same order: ownership (404); source type (BR-16, `INVALID_SOURCE_ACCOUNT`); archived source (BR-14, `VALIDATION_ERROR`); targets (BR-06, `INVALID_TARGET_ACCOUNT`); future date (`FUTURE_DATE_NOT_ALLOWED`); 90-day window (`DATE_TOO_OLD`); allocation sum (BR-05, `INVALID_ALLOCATION_SUM`); amounts (BR-04, `VALIDATION_ERROR`). On any failure nothing changes.
-- **S2-D6 (unchanged values may stay):** an edit may keep (a) the saved `txnDate` even if it is now more than 90 days ago, and (b) an account the saved version already used as its source or as a line target even if it has since been archived. A **changed** date must be within T−90 to today (**Q-4**), and a **newly chosen** account must be active.
+- **S2-D4 (edit = save the new version):** the request carries the full new version (`accountId`, `txnDate`, `totalAmount`, `memo`, `lines`). The server checks it in this order, which is the order the create path already uses (`transaction.service.ts`, `checkPaymentAccounts` / `checkReceiptAccounts`), extended by the three edit-only checks (steps 2 to 4):
+  1. Request schema: shape, unknown fields, `kind` present, amounts (BR-04), at least one line, date format → `400 VALIDATION_ERROR`.
+  2. The transaction exists and belongs to the caller → otherwise `404 NOT_FOUND` (BR-01).
+  3. It is not an opening balance → otherwise `400 VALIDATION_ERROR` (S2-D2).
+  4. It is not voided → otherwise `409 TRANSACTION_VOIDED` (Q-5).
+  5. The new source and every line target belong to the caller → otherwise `404 NOT_FOUND`.
+  6. Archived source → `400 VALIDATION_ERROR` (BR-14), unless exempt under S2-D6.
+  7. Source type → `400 INVALID_SOURCE_ACCOUNT` (BR-16).
+  8. Targets: archived (unless exempt under S2-D6), the source itself, or outside the matrix (including the F-10/F-11 rows) → `400 INVALID_TARGET_ACCOUNT` (BR-06).
+  9. Future date → `400 FUTURE_DATE_NOT_ALLOWED`; then the 90-day window → `400 DATE_TOO_OLD`, unless the date is unchanged (S2-D6) (BR-10).
+  10. Allocation sum → `400 INVALID_ALLOCATION_SUM` (BR-05).
+
+  On any failure nothing changes. The create and edit paths call one shared validator for steps 5 to 10, so the order cannot drift between them.
+- **S2-D6 (unchanged values may stay):** an edit may keep (a) the saved `txnDate` even if it is now more than 90 days ago, and (b) an account that has since been archived, but only **in the same role**: the saved source may stay the source, and an account that was a line target may stay a line target. An archived account moved into another role (for example a former target chosen as the new source) counts as newly chosen. A **changed** date must be within T−90 to today (**Q-4**), and a **newly chosen** account must be active.
 - **Kind is fixed:** a body with `kind`, or any field other than the five above, returns `400 VALIDATION_ERROR`.
 - **Lines are replaced:** the old lines are deleted and the new ones inserted with new ids and `line_no` 1..n. The transaction keeps its `id` and `created_at`; `updated_at` is set to the time of the edit.
 - **Q-6 (no audit trail):** previous versions are not stored; `updatedAt` shows that, and when, a transaction was last edited. This is a disclosed limitation.
@@ -59,6 +71,20 @@ Shared conventions and error codes are in [Sprint 1 README](../sprint-1/README.m
 
 - No new tables, columns or migrations. Uses `transactions.voided_at` and `transactions.updated_at` (migration `20261111213027_accounts_ledger`); lines are replaced through the existing cascade from `transactions` to `allocation_lines`. The F-05/F-06 validation is shared by create and edit rather than copied.
 
+### 2.4 Sprint 1 tests revised by this feature (F-07 1.2)
+
+The F-07 demo ledger (`insertDemoLedger` in `tests/helpers/ledger.helper.ts`) already contains one voided 5,000.00 THB Payment dated 28 Jan, newer than the other four rows. Once history returns voided transactions, these tests in `tests/api/transaction-history.api.test.ts` change, **in the F-13 commit that changes the history query**, and the F-13 PR lists them. No AC changes, and each test keeps checking the same behaviour.
+
+| Test | Current expectation (F-07 1.1) | Expectation from F-13 (F-07 1.2) |
+|---|---|---|
+| TEST-07.1 | `total: 4`; items repayment, card charge, salary, opening; `not.toContain(voidedTransactionId)`; item keys without `voidedAt`/`updatedAt` | `total: 5`; items voided payment, repayment, card charge, salary, opening; the voided item has `voidedAt` set and the other four `voidedAt: null`; item keys include `voidedAt` and `updatedAt` |
+| TEST-07.2 | `?limit=2&offset=2` → `total: 4`, items salary, opening | `total: 5`, items card charge, salary (the voided row now takes position 1) |
+| "a malformed transaction id returns 400 … and an offset past the end returns an empty page" | `?offset=10` → `total: 4` | `total: 5` |
+| "a voided transaction is not returned by id (f-07 1.1 §1)" | 404 | Renamed to "a voided transaction is returned by id, marked as voided (f-07 1.2)": 200 with `voidedAt` set |
+| "transactions tied on date and creation time page in a stable id order …" (index plan check) | `EXPLAIN` of the query with `voided_at IS NULL` | `EXPLAIN` of the new history query without the voided filter; still uses `transactions_user_id_txn_date_created_at_idx` |
+
+The comment in that file's `beforeEach` ("one voided 5,000.00 payment that history must not list") is updated to match. Balances (`accounts.api.test.ts` TEST-03.3) and summaries (`summary.api.test.ts` TEST-08.3) still exclude the voided row and do not change.
+
 ---
 
 ## 3. Acceptance criteria
@@ -86,14 +112,14 @@ Starting state unless stated: Alice after the Sprint 1 journey (plan.md §2): Ba
 |---|---|---|---|---|---|
 | **TEST-13.1** | AC-13.1 | A | Starting state | PATCH the card charge with total 1,400.00 THB, lines Dining 900.00 and Groceries 500.00, same source and date | 200; same id; `updatedAt` later than before; card debt 60,000 satang; Dining 90,000; Groceries 50,000; month expense 140,000 satang. |
 | **TEST-13.2** | AC-13.2 | A | Starting state; Wallet opening 1,000.00 THB | PATCH the repayment: source Wallet, date the 2nd of the month, memo "moved", one line Credit Card 800.00 THB | 200; same id; Bank Account 8,000,000 satang; Wallet 20,000 satang; card debt 40,000; detail shows the new memo and one line with a new line id. |
-| **TEST-13.3** | AC-13.3 | U, A | Starting state; Telecom archived | PATCH the card charge with, in turn: lines summing to 1,000.00 of 1,200.00; a line to Salary; source Salary; tomorrow's date; date T−91; a new line to Telecom; a body with `kind: "RECEIPT"` | INVALID_ALLOCATION_SUM; INVALID_TARGET_ACCOUNT; INVALID_SOURCE_ACCOUNT; FUTURE_DATE_NOT_ALLOWED; DATE_TOO_OLD; INVALID_TARGET_ACCOUNT; VALIDATION_ERROR. After each, the charge, its two lines and every balance are unchanged. U: the shared validator returns the same errors for create and edit. |
-| **TEST-13.4** | AC-13.4 | U, A | A Payment Bank Account → Telecom 100.00 THB dated T−120, inserted through Prisma (an old row saved before v2.0); a Payment Bank Account → Electricity 50.00 THB dated today, then Electricity archived | PATCH the T−120 Payment with memo "old" and total and line 120.00 (date unchanged); PATCH it with date T−100; PATCH the Electricity Payment with memo "kept" (target unchanged) | First: 200 and Telecom shows 12,000 satang. Second: 400 DATE_TOO_OLD, unchanged. Third: 200. U: the rule exempts only an unchanged date and accounts already on the saved version. |
+| **TEST-13.3** | AC-13.3 | U, A | Starting state; Telecom archived directly in the database with the ledger helper (F-13 does not depend on F-09) | PATCH the card charge with, in turn: lines summing to 1,000.00 of 1,200.00; a line to Salary; source Salary; tomorrow's date; date T−91; a new line to Telecom; a body with `kind: "RECEIPT"` | INVALID_ALLOCATION_SUM; INVALID_TARGET_ACCOUNT; INVALID_SOURCE_ACCOUNT; FUTURE_DATE_NOT_ALLOWED; DATE_TOO_OLD; INVALID_TARGET_ACCOUNT; VALIDATION_ERROR. After each, the charge, its two lines and every balance are unchanged. U: the shared validator returns the same errors for create and edit. |
+| **TEST-13.4** | AC-13.4 | U, A | A Payment Bank Account → Telecom 100.00 THB dated T−120, inserted through Prisma (an old row saved before v2.0); a Payment Bank Account → Electricity 50.00 THB dated today, then Electricity archived directly in the database with the ledger helper | PATCH the T−120 Payment with memo "old" and total and line 120.00 (date unchanged); PATCH it with date T−100; PATCH the Electricity Payment with memo "kept" (target unchanged); PATCH it again with source Electricity (archived, moved into the source role) | First: 200 and Telecom shows 12,000 satang. Second: 400 DATE_TOO_OLD, unchanged. Third: 200. Fourth: 400 VALIDATION_ERROR (archived source), unchanged. U: the rule exempts only an unchanged date and accounts kept in the same role. |
 | **TEST-13.5** | AC-13.5 | A | Starting state | POST `/transactions/{repayment}/void`; GET accounts, the month summary, `GET /transactions` and the detail | 200 with `voidedAt`; Bank Account 8,000,000 satang; card debt 120,000; summary unchanged (income 3,000,000, expense 120,000); history `total` still 4 and the repayment has `voidedAt` set; detail 200 with `voidedAt`. |
 | **TEST-13.6** | AC-13.6 | A | TEST-13.5 state; a second active Payment | PATCH the voided repayment; void it again; send two voids of the second Payment in parallel | PATCH and repeat void: 409 TRANSACTION_VOIDED, nothing changes; parallel voids: one 200 and one 409. |
 | **TEST-13.7** | AC-13.7 | A | Starting state | PATCH the Bank Account opening-balance transaction; void it through `/transactions/:id/void` | Both 400 VALIDATION_ERROR; the opening balance is unchanged and active. |
 | **TEST-13.8** | AC-13.8 | A | Starting state; Bob and Admin logged in | Bob PATCHes and voids Alice's card charge; Admin does both; anonymous does both | Bob 404 NOT_FOUND; Admin 403 FORBIDDEN; anonymous 401 UNAUTHENTICATED; the charge is unchanged and active. |
 | **TEST-13.9** | AC-13.9 | U, A | Starting state | Apply TEST-13.1 and then TEST-13.5; compute the invariant over `GET /api/v1/accounts` | Net worth (8,000,000 − 140,000 = 7,860,000 satang) equals openings 5,000,000 + income 3,000,000 − expense 140,000, with zero difference. U: the balance engine ignores voided rows and uses the edited lines. |
-| **TEST-13.10** | AC-13.10 | E | Starting state; viewport 1280 and 360 | Open the card charge, click **Edit**, change Dining to 900.00 (Save stays disabled until the total is 1,400.00), save; open the repayment, click **Void** and confirm; open `/transactions` and the Dashboard | The detail page shows Dining 900.00 ฿ and "Edited"; the history row for the repayment shows **Voided** and a struck-through 800.00 ฿; the Dashboard shows Bank Account 80,000.00 ฿ and Credit Card 1,400.00 ฿; no page reload; the edit form fits 360 px. |
+| **TEST-13.10** | AC-13.10 | E | Starting state; viewport 1280 and 360 | Open the card charge, click **Edit**, set Dining to 900.00 (Save is disabled while Remaining is −200.00), set the total to 1,400.00, save; open the repayment, click **Void** and confirm; open `/transactions` and the Dashboard | The detail page shows Dining 900.00 ฿ and "Edited"; the history row for the repayment shows **Voided** and a struck-through 800.00 ฿; the Dashboard shows Bank Account 80,000.00 ฿ and Credit Card 1,400.00 ฿; no page reload; the edit form fits 360 px. |
 
 ---
 
@@ -102,7 +128,7 @@ Starting state unless stated: Alice after the Sprint 1 journey (plan.md §2): Ba
 - Every AC above has an executed automated test with results recorded per Sprint 2 README §5.
 - Failing-first evidence is retained for AC-13.1 (edit recalculates), AC-13.3 (edit re-validates), AC-13.4 (S2-D6 exemptions), AC-13.5 (void excludes but keeps in history) and AC-13.6 (409 on a voided transaction).
 - The create and edit paths share one validation function; the PR shows that F-05/F-06 tests still pass unchanged.
-- F-07 tests still pass; the F-07 1.2 change (voided rows included) is covered by TEST-13.5 and TEST-13.10.
+- The F-07 tests listed in §2.4 change only as listed there, in the commit that changes the history query; every other F-07 test passes unchanged. The F-07 1.2 behaviour is also covered by TEST-13.5 and TEST-13.10.
 - The NFR-02 route-list test includes both endpoints; the NFR-03 invariant test includes edits and voids.
 - System-Level SDS §3 (edit page), §4 and §5 are updated in the implementation PR.
 - F-13 rebases after F-10 and F-11 so edits are checked against the Sprint 2 matrix.
