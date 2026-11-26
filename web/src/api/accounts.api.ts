@@ -3,11 +3,13 @@ import {
   Account,
   AccountResponse,
   AccountsResponse,
+  CorrectOpeningBalanceInput,
   CreateAccountInput,
   CreateOpeningBalanceInput,
   OpeningBalanceResponse,
   OpeningBalanceTransaction,
   UpdateAccountInput,
+  VoidedOpeningBalanceTransaction,
 } from '../types/account.types';
 
 export const accountsQueryKey = ['accounts'] as const;
@@ -31,6 +33,31 @@ export async function createOpeningBalance(
     body: JSON.stringify(input),
   });
   const data = await handleResponse<OpeningBalanceResponse>(res);
+  return data.transaction;
+}
+
+/** PATCH /api/v1/accounts/:id/opening-balance: correct the amount or date in place (f-12 §2.1). */
+export async function correctOpeningBalance(
+  accountId: string,
+  input: CorrectOpeningBalanceInput
+): Promise<OpeningBalanceTransaction> {
+  const res = await fetch(`/api/v1/accounts/${encodeURIComponent(accountId)}/opening-balance`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(input),
+  });
+  const data = await handleResponse<OpeningBalanceResponse>(res);
+  return data.transaction;
+}
+
+/** POST /api/v1/accounts/:id/opening-balance/void: remove it by voiding (f-12 §2.1). */
+export async function removeOpeningBalance(accountId: string): Promise<VoidedOpeningBalanceTransaction> {
+  const res = await fetch(`/api/v1/accounts/${encodeURIComponent(accountId)}/opening-balance/void`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+  const data = await handleResponse<{ transaction: VoidedOpeningBalanceTransaction }>(res);
   return data.transaction;
 }
 
