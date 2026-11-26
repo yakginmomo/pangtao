@@ -11,6 +11,8 @@ Related documents: [SRS](../srs.md) · [Feature inventory](../features.md) · [R
 | 2 | Core expansion | F-09 to F-13 | Sprint 1 release; F-09 before F-10; F-05 and F-06 before F-10, F-11, F-13 | Accounts manageable; all eight allocation kinds give correct balances; transactions editable and voidable; opening balances manageable; outstanding loans overview; regression suite green; deployed increment | Deliverable 2, 29 Nov |
 | 3 | Remaining features and hardening | F-14 to F-18 | Sprint 2; F-07 before F-14 and F-15; F-08 before F-16; F-18 last | Search and filter, favorites and duplicate, category summaries and monthly report, administrator account creation; performance, usability and failure handling verified; final report and demo | Progress 29 Nov (F-14 and F-15 implemented, contracts for F-16 to F-18, remaining-work list); complete 13 Dec |
 
+Sprint 2 scope, owners, Issues, shared decisions, demonstration journey, build order and Definition of Done are in the [Sprint 2 README](sprint-2/README.md).
+
 ## 2. Sprint 1 scope
 
 **Included:** F-01 to F-08. Transactions support Payment lines to Expense accounts (from a Cash or card source), Payment lines to a Loan Taken account as repayment (from a Cash source), and Receipt lines to Income accounts. Accounts are seeded.

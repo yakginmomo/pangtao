@@ -42,7 +42,7 @@ A transaction has one **source account** and one or more **allocation lines**. T
 | Receipt | Loan Taken account | New borrowing | Debt + line | Not income | 2 |
 | Receipt | Another Cash account | Transfer in | Other balance − line | Not income | 2 |
 
-In Sprint 1 a Loan Taken (card) source accepts Expense lines only, and Loan Taken repayment lines are accepted from a Cash source only. An **opening balance** sets an account’s starting amount and is neither income nor expense.
+A Loan Taken (card) source accepts Expense lines only; every other row uses a Cash source, so lending, borrowing, repayments and transfers are Cash movements (Revised in v2.1, F-10 Q-1: before v2.1 the card source was limited to Expense lines only "in Sprint 1", which left card lending and card-to-Cash moves open for later sprints; v2.1 rules them out.) An **opening balance** sets an account’s starting amount and is neither income nor expense.
 
 ## 5. Functional requirements
 

@@ -1,6 +1,6 @@
 # F-06 Received Money: Engineering Contract
 
-Requirements: FR-13; BR-04, BR-05, BR-06, BR-07, BR-10, BR-14, BR-16 · Depends on: F-03 · Contract version: 1.3 (see [version history](README.md#5-contract-version-history)) · Suggested branch: `feature/F-06-received-money`
+Requirements: FR-13; BR-04, BR-05, BR-06, BR-07, BR-10, BR-14, BR-16 · Depends on: F-03 · Contract version: 1.4 (see [version history](README.md#5-contract-version-history)) · Suggested branch: `feature/F-06-received-money`
 
 Shared conventions, error codes and the Product Definition of Done are in [README.md](README.md).
 
@@ -16,7 +16,7 @@ Shared conventions, error codes and the Product Definition of Done are in [READM
 2. The user chooses a receiving Cash account (e.g. Bank Account), calendar date, total amount received, and optional memo.
 3. The user adds one or more allocation lines specifying target Income accounts (e.g. Salary, Interest Earned) and their respective amounts.
 4. The UI displays the remaining unallocated balance; the submit button is disabled until lines sum exactly to the total amount.
-5. On submit, the server validates the payload, ensures the receiving account is `CASH`, ensures target accounts are `INCOME`, verifies the line sum invariant, and persists the record atomically.
+5. On submit, the server validates the payload, ensures the receiving account is `CASH`, ensures target accounts are allowed by the receipt matrix (`INCOME` in Sprint 1; v1.4 adds the Sprint 2 rows), verifies the line sum invariant, and persists the record atomically.
 6. The user is redirected to the Dashboard with updated balances.
 
 **Rules and validation**
@@ -25,7 +25,7 @@ Shared conventions, error codes and the Product Definition of Done are in [READM
 - **BR-05 (Line Sum Invariant)**: Must have $\ge 1$ allocation line; line amounts must sum exactly to `totalAmount`. Any discrepancy returns `400 VALIDATION_ERROR` with code `INVALID_ALLOCATION_SUM`.
 - **BR-06 (Allowed Target Matrix in Sprint 1)**:
   - Source account must be of type `CASH`.
-  - Target accounts in Sprint 1 must be of type `INCOME`. (Targeting loan accounts or other cash accounts is introduced in Sprint 2).
+  - Target accounts in Sprint 1 must be of type `INCOME`. (v1.4) From Sprint 2 they may also be `LOAN_GIVEN` (repayment received, F-10), `LOAN_TAKEN` (borrowing, F-10) or another `CASH` account (transfer in, F-11); `EXPENSE` stays invalid (Sprint 2 README §2.2).
   - Target account cannot equal the receiving source account.
   - Accounts must belong to the session user and not be archived. An archived receiving account returns `400 VALIDATION_ERROR` and nothing is saved (BR-14, as in F-04).
 - **BR-07 (Atomic Balance Effects)**:
@@ -50,7 +50,7 @@ Shared conventions, error codes and the Product Definition of Done are in [READM
 - When `txnDate` is more than 90 days before today in Bangkok time: returns 400 with code `DATE_TOO_OLD` and nothing is saved, with the same message, `details` and check order as F-05 §2.1 (v1.3).
 - When receiving account is not Cash: returns 400 with code `INVALID_SOURCE_ACCOUNT`.
 - When the receiving account is archived: returns 400 VALIDATION_ERROR (BR-14).
-- When target account is not Income in Sprint 1: returns 400 with code `INVALID_TARGET_ACCOUNT`.
+- When target account is not Income in Sprint 1 (v1.4: not Income, Loan Given, Loan Taken or another Cash account from Sprint 2): returns 400 with code `INVALID_TARGET_ACCOUNT`.
 - When any account belongs to another user: returns 404 NOT_FOUND.
 
 ### 2.2 UI
@@ -81,7 +81,7 @@ Shared conventions, error codes and the Product Definition of Done are in [READM
 | AC-06.8 | In the browser, user submits a salary receipt, observes form calculations, and verifies updated Cash balance on the Dashboard. |
 | AC-06.9 | A zero or negative total or line amount, or an amount above $100,000,000.00\text{ THB}$, returns 400 VALIDATION_ERROR and saves nothing (BR-04). |
 | AC-06.10 | Receiving money into an archived Cash account returns 400 VALIDATION_ERROR and saves nothing (BR-14). |
-| AC-06.11 | A receipt line targeting an archived account, the receiving account itself, or an account outside the Sprint 1 receipt matrix returns 400 INVALID_TARGET_ACCOUNT and saves nothing (BR-06). |
+| AC-06.11 | A receipt line targeting an archived account, the receiving account itself, or an account outside the receipt matrix returns 400 INVALID_TARGET_ACCOUNT and saves nothing (BR-06). Sprint 1 matrix: Income only; (v1.4) Sprint 2 adds Loan Given, Loan Taken (F-10) and Cash (F-11). |
 
 ---
 
@@ -100,7 +100,7 @@ Shared conventions, error codes and the Product Definition of Done are in [READM
 | **TEST-06.8** | AC-06.8 | E | Alice logged in | In browser, open `/transactions/new`, click Receive tab, choose Bank Account, enter 30,000.00 THB, select Salary, submit | Form submits, redirects; Dashboard shows Bank Account increased by 30,000.00 THB. |
 | **TEST-06.9** | AC-06.9 | A | Alice logged in; Bank source | POST `/api/v1/transactions` (kind: RECEIPT) with total 0; then total -100; then total 10000000001; then a valid total with a line amount of 0 | Each returns 400 VALIDATION_ERROR; no transaction or line is saved. |
 | **TEST-06.10** | AC-06.10 | A | Alice logged in; archived Bank Account | POST `/api/v1/transactions` (kind: RECEIPT, source: archived Bank, total: 1,000.00 THB, lines: Salary 1,000.00 THB) | 400 VALIDATION_ERROR; no transaction or line is saved. |
-| **TEST-06.11** | AC-06.11 | U, A | Alice logged in; Bank source | POST `/api/v1/transactions` (kind: RECEIPT, source: Bank) with a line targeting an archived Income account, then Bank itself, then Wallet, Credit Card or Dining | Each returns 400 INVALID_TARGET_ACCOUNT; nothing is saved. |
+| **TEST-06.11** | AC-06.11 | U, A | Alice logged in; Bank source | POST `/api/v1/transactions` (kind: RECEIPT, source: Bank) with a line targeting an archived Income account, then Bank itself, then Dining. (v1.4: the Wallet (Cash) case moved to TEST-11.2 and the Credit Card (Loan Taken) case to TEST-10.3, where they are accepted; each stays here until its feature changes the matrix.) | Each returns 400 INVALID_TARGET_ACCOUNT; nothing is saved. |
 
 ---
 
