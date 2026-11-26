@@ -162,7 +162,7 @@ Actual tests and results for each Sprint 2 feature, in the same form as §3. Aut
 
 ### F-09 Account management (contract 1.0, Issue #57)
 
-**Tested version:** branch `feature/F-09-account-management` from `sprint-2-staging` at `f388bea` (merge of PR #65). Failing-test commit `eafc03c`; implementation commits at this PR's head (recorded in the F-09 PR description per DoD 1.1). Commands on the implementation tree (Docker `app` container stopped, so E2E used this branch's server): lint and both type-checks clean, `npm test` 148 passed, 0 failed, 0 skipped (16 files), service-layer line coverage 98.25%, build succeeded, `npx playwright test` 23 passed, 0 failed, 0 skipped, 0 flaky.
+**Tested version:** branch `feature/F-09-account-management` from `sprint-2-staging` at `f388bea` (merge of PR #65). Failing-test commit `eafc03c`; implementation commits `8f7c80b` (server) and `f85f513` (Accounts screen), then the review-fix commit at this PR's head (recorded in the F-09 PR description per DoD 1.1). Commands on the tree with the review fix (Docker `app` container stopped, so E2E used this branch's server): lint and both type-checks clean, `npm test` 150 passed, 0 failed, 0 skipped (16 files), service-layer line coverage 98.84%, build succeeded, `npx playwright test` 23 passed, 0 failed, 0 skipped, 0 flaky. CI on `fa7231e` (before the review fix): run [45865562142](https://github.com/yakginmomo/pangtao/actions/runs/45865562142), all four checks passed.
 
 **Failing-first.** At `eafc03c` the nine new API tests and the NFR-02 route-list test (TEST-01.7) failed on the pre-change code: the account requests returned 404 because `POST /accounts` and `PATCH /accounts/:id` did not exist. Two disclosures:
 
@@ -179,7 +179,22 @@ Actual tests and results for each Sprint 2 feature, in the same form as §3. Aut
 | AC-09.6 | TEST-09.6 | A | `tests/api/account-management.api.test.ts` | PASS; failing-first `eafc03c` |
 | AC-09.7 | TEST-09.7 | A | `tests/api/account-management.api.test.ts` | PASS |
 | AC-09.8 | TEST-09.8; NFR-02 route list in TEST-01.7 | A | `tests/api/account-management.api.test.ts` and `tests/api/auth.api.test.ts` | PASS (TEST-09.8 opens with an owner control, so Bob's 404 is an ownership result) |
-| AC-09.9 | TEST-09.9 | E | `tests/e2e/accounts.spec.ts` | PASS locally; not yet run in CI |
-| AC-09.10 | TEST-09.10 | E | `tests/e2e/accounts.spec.ts` | PASS locally; not yet run in CI |
+| AC-09.9 | TEST-09.9 | E | `tests/e2e/accounts.spec.ts` | PASS locally and in CI run 45865562142 (`fa7231e`) |
+| AC-09.10 | TEST-09.10 | E | `tests/e2e/accounts.spec.ts` | PASS locally and in CI run 45865562142 (`fa7231e`) |
 
-**Status:** F-09 is implemented on its branch and all ten ACs pass locally. It is not merged into `sprint-2-staging`, not reviewed and not released.
+**Mutation checks (PR #66 review).** The failing-first commit only shows that the endpoint was missing (404). To show that each rule is enforced, the rule was disabled in the implementation, the matching test was run, and the file was restored from a saved copy. These runs are not commits.
+
+| AC | Rule disabled | Test run | Result with the rule disabled |
+|---|---|---|---|
+| AC-09.2 | `superRefine` subtype check in `CreateAccountBodySchema` | TEST-09.2 (API) | FAIL: `expected 500 to be 400` for CASH with `CREDIT_CARD` (the database CHECK constraint rejects it, but as a server error) |
+| AC-09.3 | Name check in `assertNameFree` and the unique-violation mapping | TEST-09.3 | FAIL: `expected 500 to be 409` |
+| AC-09.3 | Only the unique-violation mapping (`mapDuplicateName`) | unit mapping test; the real PostgreSQL violation test | FAIL both: the Prisma error comes back unmapped |
+| AC-09.5 | `.strict()` on `UpdateAccountBodySchema` | TEST-09.5 | FAIL: `expected 200 to be 400` for `{ name, colour }` |
+| AC-09.6 | `isArchived` never written by `updateAccount` | TEST-09.6; TEST-09.7 | FAIL both: the archived flag is not set |
+| AC-09.6 | Archived Payment source accepted (`checkPaymentAccounts`, F-05) | TEST-09.6 | FAIL: `expected 201 to be 400` |
+| AC-09.6 | Archived line target accepted (`checkTargets`, F-05) | TEST-09.6 | FAIL: `expected 201 to be 400` |
+| AC-09.6 | Opening balance accepted on an archived account (`opening-balance.service.ts`, F-04) | TEST-09.6 | FAIL: `expected 201 to be 400` |
+
+The same mutation exposed a weak test. With only the unique-violation mapping disabled, the parallel-create test (two simultaneous creates) still passed, because the name check normally wins the race and returns the 409 itself, so that test does not prove the mapping. The mapping therefore moved into `account.rules.ts` as a pure function and is pinned by two deterministic tests: a unit test, and a test that takes the real error PostgreSQL raises for a duplicate `(user_id, name)` and passes it through the mapping. The mapping also now acts only on a violation whose target includes `name`; a unique violation on another key is returned unchanged. The parallel-create test stays as an end-to-end check, not as evidence for the mapping.
+
+**Status:** at the time of writing, PR #66 is open with CI passing on `fa7231e`; F-09 is not yet merged into `sprint-2-staging` and not released. The statuses and the tested commit are updated when it merges.
