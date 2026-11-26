@@ -3,6 +3,7 @@ import { prisma } from '../prisma.js';
 import { AppError } from '../middleware/error.middleware.js';
 import { satangToJson } from '../utils/money.util.js';
 import type { CreateAccountBodyDto, UpdateAccountBodyDto } from '../schemas/account.schema.js';
+import { accountNameExistsError, mapDuplicateName } from './account.rules.js';
 
 export interface AccountView {
   id: string;
@@ -173,7 +174,11 @@ export class AccountService {
     }
   }
 
-  /** One account in the `GET /accounts` shape, with its derived balance (f-09 §2.1). */
+  /**
+   * One account in the `GET /accounts` shape, with its derived balance (f-09 §2.1). It runs after
+   * the write's transaction has committed and only shapes the response: every check already ran
+   * inside that transaction, so this read does not split the check-and-write unit.
+   */
   private async getAccountView(userId: string, accountId: string): Promise<AccountView> {
     const account = (await this.listAccounts(userId)).find((item) => item.id === accountId);
     if (!account) {
@@ -183,26 +188,12 @@ export class AccountService {
   }
 }
 
-const NAME_EXISTS_MESSAGE = 'You already have an account with this name';
-
 /** BR-14: names are unique per user, compared exactly after trimming (the index is case-sensitive). */
 async function assertNameFree(tx: Prisma.TransactionClient, userId: string, name: string): Promise<void> {
   const existing = await tx.account.findFirst({ where: { userId, name }, select: { id: true } });
   if (existing) {
-    throw new AppError(409, 'ACCOUNT_NAME_EXISTS', NAME_EXISTS_MESSAGE, [
-      { field: 'name', issue: 'an account with this name already exists' },
-    ]);
+    throw accountNameExistsError();
   }
-}
-
-/** The unique index is the race-safe guard: a concurrent duplicate is a 409, never a 500. */
-function mapDuplicateName(error: unknown): unknown {
-  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-    return new AppError(409, 'ACCOUNT_NAME_EXISTS', NAME_EXISTS_MESSAGE, [
-      { field: 'name', issue: 'an account with this name already exists' },
-    ]);
-  }
-  return error;
 }
 
 export const accountService = new AccountService();

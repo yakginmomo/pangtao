@@ -5,6 +5,7 @@ import { prisma } from '../../server/src/prisma.js';
 import { resetDatabase, createTestSession } from '../helpers/db.helper.js';
 import { clearRateLimitStore } from '../../server/src/middleware/rate-limit.middleware.js';
 import { accountIdsByName, bangkokDate, countLedgerRows } from '../helpers/ledger.helper.js';
+import { mapDuplicateName } from '../../server/src/services/account.rules.js';
 
 // State-changing requests must carry an Origin (NFR-10); act as the Vite dev origin.
 const TEST_ORIGIN = 'http://localhost:3000';
@@ -148,6 +149,19 @@ describe('F-09 Account Management (STS)', () => {
 
     const bob = await as(bobToken).post(ACCOUNTS_URL).send({ name: 'Savings', type: 'CASH' });
     expect(bob.status).toBe(201);
+  });
+
+  it('a real PostgreSQL unique violation on (user_id, name) is mapped to ACCOUNT_NAME_EXISTS (f-09 §5)', async () => {
+    // The name check usually wins a race, so a parallel request alone does not exercise the mapping.
+    // Provoke the database error directly and pass it through the same mapping the service uses.
+    const data = { userId: seededUsers.alice.id, name: 'Duplicate', type: 'EXPENSE' as const };
+    await prisma.account.create({ data });
+    const error = await prisma.account.create({ data }).then(
+      () => null,
+      (caught: unknown) => caught
+    );
+    expect(error).not.toBeNull();
+    expect(mapDuplicateName(error)).toMatchObject({ statusCode: 409, code: 'ACCOUNT_NAME_EXISTS' });
   });
 
   it('two parallel creates with the same name give one 201 and one 409, never a 500 (f-09 §5)', async () => {
