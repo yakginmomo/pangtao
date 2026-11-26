@@ -1,6 +1,6 @@
 # F-07 Transaction History: Engineering Contract
 
-Requirements: FR-17, FR-25; BR-01 · Depends on: F-05, F-06 · Contract version: 1.1 (see [version history](README.md#5-contract-version-history)) · Suggested branch: `feature/F-07-transaction-history`
+Requirements: FR-17, FR-25; BR-01 · Depends on: F-05, F-06 · Contract version: 1.2 (see [version history](README.md#5-contract-version-history)) · Suggested branch: `feature/F-07-transaction-history`
 
 Shared conventions, error codes and the Product Definition of Done are in [README.md](README.md).
 
@@ -14,7 +14,7 @@ Shared conventions, error codes and the Product Definition of Done are in [READM
 
 1. The user navigates to `/transactions`.
 2. The UI calls `GET /api/v1/transactions?limit=50&offset=0`.
-3. The server authenticates the caller (`USER` role) and queries the user's non-voided transactions ordered by `txn_date DESC, created_at DESC`.
+3. The server authenticates the caller (`USER` role) and queries the user's transactions ordered by `txn_date DESC, created_at DESC` (non-voided only until F-13; see Voided transactions below).
 4. The response includes the paginated list with total count and nested allocation lines.
 5. The user can click an entry to open `/transactions/:id` for detailed line inspection.
 
@@ -23,7 +23,7 @@ Shared conventions, error codes and the Product Definition of Done are in [READM
 - **BR-01 (Ownership Isolation)**: The transaction query filters strictly by `session.userId`. Transactions belonging to other users are never returned. Directly querying another user's transaction ID returns `404 NOT_FOUND`.
 - **Pagination**: Default limit is 50, maximum limit is 100. Offset must be $\ge 0$. Exceeding limit returns `400 VALIDATION_ERROR`.
 - **Chronological Ordering**: Transactions are ordered primarily by `txn_date DESC`, and secondarily by `created_at DESC`.
-- **Voided transactions (BR-12)**: History lists non-voided transactions only in Sprint 1, because nothing can void a transaction until F-13 (Edit and void, Sprint 2). F-13 owns BR-12 and extends this list to show voided transactions marked as voided.
+- **Voided transactions (BR-12)**: History lists non-voided transactions only in Sprint 1, because nothing can void a transaction until F-13 (Edit and void, Sprint 2). (v1.2) From F-13, the list and the detail also return voided transactions, which keep their place in the order, count in `total`, and carry `voidedAt` (an ISO timestamp, `null` when active) and `updatedAt`; the UI marks them as voided (F-13 §2). AC-07.x are unchanged; F-13 TEST-13.5 and TEST-13.10 verify the voided rows.
 - Amounts in the API are integer satang; UI renders formatted Thai Baht.
 
 **Permissions:** User only. Administrator receives 403, anonymous receives 401.
@@ -36,8 +36,8 @@ Shared conventions, error codes and the Product Definition of Done are in [READM
 
 | Endpoint | Request | Success | Errors |
 |---|---|---|---|
-| GET /api/v1/transactions?limit&offset | none | 200 `{ items: [ { id, kind, accountId, accountName, txnDate, totalAmount, memo, lines: [ { id, targetAccountId, targetAccountName, amount, note } ] } ], total, limit, offset }` | 400 VALIDATION_ERROR; 401 UNAUTHENTICATED; 403 FORBIDDEN |
-| GET /api/v1/transactions/:id | none | 200 `{ transaction: { id, kind, accountId, accountName, txnDate, totalAmount, memo, lines } }` | 400 VALIDATION_ERROR; 401 UNAUTHENTICATED; 403 FORBIDDEN; 404 NOT_FOUND |
+| GET /api/v1/transactions?limit&offset | none | 200 `{ items: [ { id, kind, accountId, accountName, txnDate, totalAmount, memo, lines: [ { id, targetAccountId, targetAccountName, amount, note } ] } ], total, limit, offset }`; (v1.2, from F-13) each item also has `voidedAt` and `updatedAt` | 400 VALIDATION_ERROR; 401 UNAUTHENTICATED; 403 FORBIDDEN |
+| GET /api/v1/transactions/:id | none | 200 `{ transaction: { id, kind, accountId, accountName, txnDate, totalAmount, memo, lines } }`; (v1.2, from F-13) also `voidedAt` and `updatedAt`, and a voided transaction returns 200 | 400 VALIDATION_ERROR; 401 UNAUTHENTICATED; 403 FORBIDDEN; 404 NOT_FOUND |
 
 ### 2.2 UI
 
