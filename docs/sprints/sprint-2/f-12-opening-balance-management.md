@@ -1,6 +1,6 @@
 # F-12 Opening Balance Management: Engineering Contract
 
-Requirements: FR-11; BR-01, BR-02, BR-04, BR-10, BR-11, BR-14; NFR-02, NFR-03, NFR-08 · Depends on: F-04 · Issue: #59 · Contract version: 1.0 (see [version history](README.md#6-contract-version-history)) · Suggested branch: `feature/F-12-opening-balance-management`
+Requirements: FR-11; BR-01, BR-02, BR-04, BR-10, BR-11, BR-14; NFR-02, NFR-03, NFR-08 · Depends on: F-04 · Issue: #59 · Contract version: 1.1 (see [version history](README.md#6-contract-version-history)) · Suggested branch: `feature/F-12-opening-balance-management`
 
 Shared conventions and error codes are in [Sprint 1 README](../sprint-1/README.md) §2 and [Sprint 2 README](README.md) §2; the Sprint 2 Definition of Done is in [Sprint 2 README](README.md) §5.
 
@@ -56,7 +56,7 @@ Shared conventions and error codes are in [Sprint 1 README](../sprint-1/README.m
 
 ### 2.3 Data
 
-- No new tables, columns or migrations. Updates `transactions.total_amount`, `transactions.txn_date` and `transactions.voided_at` on the `OPENING_BALANCE` row; `updated_at` changes on every write. The `transactions_total_amount_range` CHECK and `unique_active_opening_balance` index from migration `20261111213027_accounts_ledger` apply unchanged.
+- No new tables, columns or migrations. Updates `transactions.total_amount`, `transactions.txn_date` and `transactions.voided_at` on the `OPENING_BALANCE` row; a correction (PATCH) changes `updated_at`; a remove (void) leaves it unchanged (f-12 1.1, the same rule as f-13 1.1), so a removed opening balance that was never corrected is not shown as "Edited". The `transactions_total_amount_range` CHECK and `unique_active_opening_balance` index from migration `20261111213027_accounts_ledger` apply unchanged.
 
 ---
 
@@ -80,7 +80,7 @@ Shared conventions and error codes are in [Sprint 1 README](../sprint-1/README.m
 |---|---|---|---|---|---|
 | **TEST-12.1** | AC-12.1 | A | Alice; Bank Account opening 50,000.00 THB dated the 1st of this month; Receipt 30,000.00 THB into Bank Account | PATCH `{ amount: 5500000 }`; then PATCH `{ date: <T−200> }`; GET accounts and the month summary | Both 200 with the original transaction id; Bank Account balance 8,500,000 satang; `openingBalance` = 5,500,000 on T−200; exactly one active OPENING_BALANCE row for the account; summary income 3,000,000, unchanged. |
 | **TEST-12.2** | AC-12.2 | A | Bank Account opening 50,000.00 THB | PATCH `{ amount: -1 }`; `{ amount: 10000000001 }`; `{ amount: 12.5 }`; `{}`; `{ amount: 100, accountId: "x" }`; `{ date: <tomorrow> }` | First five: 400 VALIDATION_ERROR; the last: 400 FUTURE_DATE_NOT_ALLOWED; the opening balance is still 5,000,000 on its original date. |
-| **TEST-12.3** | AC-12.3 | A | TEST-12.1 state | POST `/accounts/{Bank}/opening-balance/void`; GET accounts; POST `/accounts/{Bank}/opening-balance` `{ amount: 1000000, date: today }` | 200 with `voidedAt` set; Bank Account balance 3,000,000 satang; `openingBalance: null`; the new opening balance returns 201 and the balance becomes 4,000,000. |
+| **TEST-12.3** | AC-12.3 | A | TEST-12.1 state | POST `/accounts/{Bank}/opening-balance/void`; GET accounts; POST `/accounts/{Bank}/opening-balance` `{ amount: 1000000, date: today }` | 200 with `voidedAt` set; Bank Account balance 3,000,000 satang; `openingBalance: null`; the new opening balance returns 201 and the balance becomes 4,000,000. `updated_at` is the same before and after the remove (and equals `created_at` for an opening balance that was never corrected). |
 | **TEST-12.4** | AC-12.4 | A | Wallet with no opening balance; Bank Account's removed (TEST-12.3 before the new one); Salary (Income) | PATCH and void on Wallet; void again on Bank Account; PATCH on Salary | Each returns 404 NOT_FOUND; nothing changes. |
 | **TEST-12.5** | AC-12.5 | A | Wallet opening 1,000.00 THB; Wallet archived directly in the database with the ledger helper (F-12 does not depend on F-09) | PATCH `{ amount: 200000 }`; void | Both 400 VALIDATION_ERROR; the opening balance is unchanged and active. |
 | **TEST-12.6** | AC-12.6 | A | Alice's Bank Account opening 50,000.00 THB; Bob, Admin logged in | Bob PATCHes and voids Alice's; Admin does both; anonymous does both | Bob 404 NOT_FOUND; Admin 403 FORBIDDEN; anonymous 401 UNAUTHENTICATED; Alice's opening balance unchanged. |

@@ -18,7 +18,7 @@ AC and test IDs follow the convention AC-NN.k and TEST-NN.k, where NN is the fea
 | FR-08 | F-03, F-08 | 1 | AC-03.x / TEST-03.x · U, A, E (accounts and balances API); AC-08.x / TEST-08.x · U, A, E (income/expense totals) |
 | FR-09 | F-09 | 2 | AC-09.1–09.10 / TEST-09.1–09.10 (F-09 1.0) · U, A, E |
 | FR-10 | F-04 | 1 | AC-04.x / TEST-04.x · U, A |
-| FR-11 | F-12 | 2 | AC-12.1–12.7 / TEST-12.1–12.7 (F-12 1.0) · A, E |
+| FR-11 | F-12 | 2 | AC-12.1–12.7 / TEST-12.1–12.7 (F-12 1.1) · A, E |
 | FR-12 | F-05 | 1 | AC-05.x / TEST-05.x · U, A, E |
 | FR-13 | F-06 | 1 | AC-06.x / TEST-06.x · U, A, E |
 | FR-14 | F-10 | 2 | AC-10.1–10.7, 10.10 / TEST-10.1–10.7, 10.10 (F-10 1.0) · U, A, E |
@@ -80,6 +80,7 @@ Baseline v1.0 contains 25 FR, 16 BR and 10 NFR. Every one is mapped to a feature
 | v2.1 | 26 Nov 2026 | Sprint 2 contracts F-09 1.0 to F-13 1.0 and Sprint 2 README 1.0, recorded before implementation. **Requirement revision (narrowed), F-10 Q-1:** SRS §4 limited a Loan Taken (card) source to Expense lines "in Sprint 1", which left card lending and card-to-Cash moves open; v2.1 makes the Expense-only rule permanent, so every loan and transfer row uses a Cash source. The SRS §4 matrix table is unchanged. Contract revisions: F-05 1.4 and F-06 1.4 move the TEST-05.13/TEST-06.11 cases that the Sprint 2 rows make valid to TEST-11.1, TEST-11.2 and TEST-10.3; F-07 1.2 returns voided transactions in history from F-13 (BR-12), and F-13 §2.4 lists the F-07 tests whose expected values change with it. §1 maps every Sprint 2 AC to FR-04, 09, 11, 14, 15, 16, 21, BR-01, 02, 04, 05, 06, 07, 08, 10, 11, 12, 14, 16 and NFR-02, 03, 08. New error codes `ACCOUNT_NAME_EXISTS` and `TRANSACTION_VOIDED` (Sprint 2 README §2.6). No requirement added or dropped; no AC removed | Teammate review, PR #63 (changes requested twice, addressed, approved and merged) |
 | v2.2 | 27 Nov 2026 | F-11 1.1 (Sprint 2 README §6): TEST-11.8's Receive step corrected to receive into Bank Account from Wallet, so its expected balances (Bank 49,200.00, Wallet 800.00 THB) follow from SRS §4; 1.0's step moved the money the other way. §2.4 names the unit pair tables of TEST-05.13/TEST-06.11 and F-10 TEST-10.10's target-group list, which change with the matrix. Test specification only: no requirement, rule, AC or behaviour changes | Teammate review, PR for Issue #58 |
 | v2.3 | 27 Nov 2026 | F-13 1.1 and F-07 1.3 (Sprint 2 README §6, Sprint 1 README §5): history items and the transaction detail also return `createdAt`, and a void leaves `updatedAt` unchanged, so the "Edited" mark in F-13 §2.2 can be computed (`updatedAt` later than `createdAt`). Recorded before the F-13 tests. No requirement, AC or TEST added or dropped | Teammate review pending (F-13 PR, Issue #61) |
+| v2.4 | 27 Nov 2026 | F-12 1.1 (Sprint 2 README §6): removing an opening balance leaves `updated_at` unchanged, as a void does in f-13 1.1, so a removed opening balance that was never corrected is not marked "Edited"; a correction still changes it. TEST-12.3 asserts it. Recorded before the fix and its failing test. No requirement, AC or TEST added or dropped | Teammate review, F-13 PR #70 (changes requested) |
 
 All assumptions and decisions (A-01–A-04, D-01–D-07) are fully resolved and agreed by the team; zero open items remain.
 
