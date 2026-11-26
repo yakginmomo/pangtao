@@ -802,7 +802,9 @@ describe('F-06 Received Money (STS)', () => {
   it('TEST-06.11 (AC-06.11): an archived, self or out-of-matrix target returns 400 INVALID_TARGET_ACCOUNT', async () => {
     await prisma.account.update({ where: { id: ids['Interest Earned'] }, data: { isArchived: true } });
 
-    for (const target of ['Interest Earned', 'Bank Account', 'Wallet', 'Credit Card', 'Dining']) {
+    // f-06 1.4: the Credit Card (Loan Taken) case is valid borrowing from F-10 and moved to TEST-10.3;
+    // the Wallet (Cash) case stays until F-11 makes it a transfer (TEST-11.2).
+    for (const target of ['Interest Earned', 'Bank Account', 'Wallet', 'Dining']) {
       const res = await asAlice(TRANSACTIONS_URL).send(
         receipt({
           accountId: ids['Bank Account'],

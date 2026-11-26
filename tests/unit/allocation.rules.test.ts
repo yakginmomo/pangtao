@@ -40,9 +40,10 @@ describe('F-05 Payment and Charge (unit rules)', () => {
     expect(thrownCode(() => checkAllocationSum(MAX, [MAX - 1n, 1n]))).toBeNull();
   });
 
-  it('TEST-05.13 (AC-05.13): only the Sprint 1 target matrix is accepted (Cash → Expense or Loan Taken; Loan Taken → Expense)', () => {
+  // f-05 1.4: AC-05.13 names the matrix; F-10 adds Cash → Loan Given. Every pair is still checked.
+  it('TEST-05.13 (AC-05.13): only the matrix is accepted (Cash → Expense, Loan Taken or Loan Given; Loan Taken → Expense)', () => {
     const allowed: Record<'CASH' | 'LOAN_TAKEN', AccountType[]> = {
-      CASH: ['EXPENSE', 'LOAN_TAKEN'],
+      CASH: ['EXPENSE', 'LOAN_TAKEN', 'LOAN_GIVEN'],
       LOAN_TAKEN: ['EXPENSE'],
     };
     const allTypes: AccountType[] = ['CASH', 'LOAN_TAKEN', 'LOAN_GIVEN', 'INCOME', 'EXPENSE'];
@@ -92,12 +93,14 @@ describe('F-06 Received Money (unit rules)', () => {
     expect(thrownCode(() => checkAllocationSum(500_000n, [300_000n, 200_000n]))).toBeNull();
   });
 
-  it('TEST-06.11 (AC-06.11): only Cash → Income is accepted for a receipt', () => {
+  // f-06 1.4: AC-06.11 names the matrix; F-10 adds Loan Given and Loan Taken. Every pair is still checked.
+  it('TEST-06.11 (AC-06.11): only Cash → Income, Loan Given or Loan Taken is accepted for a receipt', () => {
+    const allowed: AccountType[] = ['INCOME', 'LOAN_GIVEN', 'LOAN_TAKEN'];
     const allTypes: AccountType[] = ['CASH', 'LOAN_TAKEN', 'LOAN_GIVEN', 'INCOME', 'EXPENSE'];
 
     for (const targetType of allTypes) {
       const code = thrownCode(() => checkReceiptAccounts(account('CASH'), [account(targetType)]));
-      expect(code, `CASH → ${targetType}`).toBe(targetType === 'INCOME' ? null : 'INVALID_TARGET_ACCOUNT');
+      expect(code, `CASH → ${targetType}`).toBe(allowed.includes(targetType) ? null : 'INVALID_TARGET_ACCOUNT');
     }
   });
 
