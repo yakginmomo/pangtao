@@ -53,7 +53,6 @@ export interface CreateAccountInput {
   subtype?: AccountSubtype | null;
 }
 
-/** f-09 §2.1: PATCH /api/v1/accounts/:id, at least one field. */
 /** f-12 §2.1: PATCH /accounts/:id/opening-balance — the changed fields only, at least one. */
 export interface CorrectOpeningBalanceInput {
   amount?: number;
@@ -66,6 +65,7 @@ export interface VoidedOpeningBalanceTransaction extends OpeningBalanceTransacti
   voidedAt: string;
 }
 
+/** f-09 §2.1: PATCH /api/v1/accounts/:id, at least one field. */
 export interface UpdateAccountInput {
   name?: string;
   isArchived?: boolean;

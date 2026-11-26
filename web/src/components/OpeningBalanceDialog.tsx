@@ -47,6 +47,8 @@ export const OpeningBalanceDialog: React.FC<OpeningBalanceDialogProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const { refetchUser } = useAuth();
   const today = bangkokToday();
+  // f-12 §2.2: "unchanged" compares values, not text, so "50000" equals a pre-filled "50000.00".
+  const unchanged = existing !== null && parseThbToSatang(amount) === existing.amount && date === existing.date;
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -62,6 +64,8 @@ export const OpeningBalanceDialog: React.FC<OpeningBalanceDialogProps> = ({
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
+    // Enter can submit a form whose Save is disabled: an unchanged edit sends nothing (never PATCH {}).
+    if (unchanged) return;
     setFieldError(null);
     setServerError(null);
 
@@ -225,7 +229,7 @@ export const OpeningBalanceDialog: React.FC<OpeningBalanceDialogProps> = ({
               type="submit"
               data-testid="opening-balance-save"
               // f-12 §2.2: in edit mode Save stays disabled until a value changes.
-              disabled={isSaving || (existing !== null && amount === initialAmount && date === initialDate)}
+              disabled={isSaving || unchanged}
               className="pt-btn-primary"
             >
               {isSaving ? 'Saving…' : 'Save opening balance'}
