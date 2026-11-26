@@ -146,8 +146,10 @@ a = await accounts(aliceSid);
 const balances = Object.fromEntries(Object.entries(a).map(([k, v]) => [k, v.balance]));
 results.push({ id: 'A5 balances after journey (satang)', expected: { Bank: 7_920_000, Card: 40_000 }, actual: { Bank: balances['Bank Account'], Card: balances['Credit Card'] }, pass: balances['Bank Account'] === 7_920_000 && balances['Credit Card'] === 40_000 });
 
-const summary = await call('GET', `/api/v1/summary/income-expense?from=${today}&to=${today}`, { sid: aliceSid });
-results.push({ id: 'A6 month summary (satang)', expected: { income: 3_000_000, expense: 120_000, net: 2_880_000 }, actual: { income: summary.body?.income, expense: summary.body?.expense, net: summary.body?.net }, pass: summary.body?.income === 3_000_000 && summary.body?.expense === 120_000 && summary.body?.net === 2_880_000 });
+// Month to date in Bangkok: the 1st of the current month through today.
+const monthStart = `${today.slice(0, 8)}01`;
+const summary = await call('GET', `/api/v1/summary/income-expense?from=${monthStart}&to=${today}`, { sid: aliceSid });
+results.push({ id: 'A6 month-to-date summary (satang)', range: { from: monthStart, to: today }, expected: { income: 3_000_000, expense: 120_000, net: 2_880_000 }, actual: { income: summary.body?.income, expense: summary.body?.expense, net: summary.body?.net }, pass: summary.body?.income === 3_000_000 && summary.body?.expense === 120_000 && summary.body?.net === 2_880_000 });
 
 const history = await call('GET', '/api/v1/transactions?limit=10&offset=0', { sid: aliceSid });
 results.push({ id: 'A7 history rows', expected: 4, actual: history.body?.items?.length, pass: history.body?.items?.length === 4 });
@@ -167,7 +169,8 @@ const rejected = await call('POST', '/api/v1/transactions', {
 });
 record('A8 under-allocated payment rejected', 400, rejected);
 const after = (await call('GET', '/api/v1/transactions?limit=50&offset=0', { sid: aliceSid })).body.total;
-results.push({ id: 'A9 nothing saved after rejection', expected: before, actual: after, pass: before === after });
+// Assert the known count directly: comparing before === after alone would pass if both were undefined.
+results.push({ id: 'A9 nothing saved after rejection', expected: 4, actual: after, before, pass: before === 4 && after === 4 });
 
 record('A10 future date rejected', 400, await call('POST', '/api/v1/transactions', {
   sid: aliceSid,

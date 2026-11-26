@@ -49,7 +49,8 @@ npm run verify
 ```
 
 Runs lint, type-check, the 137 unit and API tests with coverage, the production build and the
-20 Playwright E2E tests. The recorded result is in `verify-output.txt`.
+20 Playwright E2E tests. `verify-output.txt` is an excerpt of that run's output (its header lists
+what was left out), not the full console log.
 
 ### 2. Scripted critical journey
 
@@ -70,7 +71,13 @@ node docs/sprints/sprint-2/evidence/part-a/continuity-journey.mjs |
 ```
 
 Expected: every entry in `results` has `"pass": true`; balances Bank 7,920,000 and Credit Card
-40,000 satang; summary income 3,000,000, expense 120,000, net 2,880,000 satang.
+40,000 satang; month-to-date summary income 3,000,000, expense 120,000, net 2,880,000 satang;
+A9 sees exactly 4 transactions before and after the rejected payment.
+
+The 26 Nov 2026 recorded output was produced by the first version of the script, which queried
+A6 for today only (`from=today&to=today`) under the label "month summary", and compared A9's
+counts only to each other. The script now queries the 1st of the month to today and asserts the
+count of 4 directly. The next run (A-R1) records output from the corrected script.
 
 ### 3. Persistence across a restart
 
@@ -93,19 +100,19 @@ Get-Content docs/sprints/sprint-2/evidence/part-a/reset-ledger.sql |
   npx prisma db execute --stdin
 ```
 
-The reset is required because Sprint 1 has no in-app delete; it removes only the synthetic
-users' ledger rows.
+The reset is required because Sprint 1 has no in-app delete. It touches only the three seeded
+synthetic accounts; see the comment at the top of `reset-ledger.sql` for exactly what it changes.
 
 ## Files
 
 | File | Contents |
 |---|---|
-| `continuity-journey.mjs` | Read-only-after-reset HTTP script for A1–A15. Takes `PANGTAO_PASS` from the environment; no credential is embedded. |
+| `continuity-journey.mjs` | HTTP script for A1–A15. A1–A4 write four synthetic transactions to Alice's ledger (run it only after a reset); A5–A15 only read or attempt rejected writes. Takes `PANGTAO_PASS` from the environment; no credential is embedded. |
 | `continuity-journey-output.json` | Recorded A1–A15 output from the 26 Nov 2026 run. |
 | `persistence-read.mjs` | New-session read after a server restart; takes a transaction id as its argument. |
 | `persistence-output.json` | Recorded restart output from the 26 Nov 2026 run. |
-| `reset-ledger.sql` | Lab 6 §4.1 reset restricted to the two synthetic users. |
-| `verify-output.txt` | Lint, type-check, test counts, coverage, build and E2E results, plus the CI and deployed-health record. |
+| `reset-ledger.sql` | Lab 6 §4.1 reset: deletes Alice's and Bob's transactions and sessions, re-enables them, and clears the login attempts of Alice, Bob and the Administrator. |
+| `verify-output.txt` | Excerpt of the `npm run verify` output: lint, type-check, test counts, coverage, build and E2E results, plus the CI and deployed-health record. |
 
 ## Boundaries
 
