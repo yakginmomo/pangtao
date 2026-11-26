@@ -87,6 +87,12 @@ test.describe('F-11 Transfers (STS)', () => {
     await paymentSource.selectOption({ label: 'Wallet' });
     await expect(target).toHaveValue('');
     await expect(page.getByTestId('line-target-0-error')).toHaveText('Choose another account for this line.');
+    // PR #68 review: switching to a source that does not clash, without touching the line, leaves no stale message.
+    await paymentSource.selectOption({ label: 'Bank Account' });
+    await expect(page.getByTestId('line-target-0-error')).toHaveCount(0);
+    await expect(target).toHaveValue('');
+    await paymentSource.selectOption({ label: 'Wallet' });
+    await expect(page.getByTestId('line-target-0-error')).toHaveCount(0); // the line has no target, so nothing clashes
     await expect(target.locator('optgroup[label="Transfer to"] option')).toHaveText(['Bank Account']);
     await page.getByTestId('payment-total').fill('1,000.00');
     await page.getByTestId('line-amount-0').fill('1000');
