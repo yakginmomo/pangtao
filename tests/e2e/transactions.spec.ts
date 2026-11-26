@@ -1,6 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 import { PrismaClient } from '@prisma/client';
-import { bangkokToday } from '../../web/src/utils/date';
+import { bangkokToday, oldestAllowedDate } from '../../web/src/utils/date';
 
 // AC-01.10: the seed password comes from the local .env, never from source.
 const SEED_PASSWORD = process.env.SEED_DEFAULT_PASSWORD;
@@ -177,6 +177,41 @@ test.describe('F-05 Payment and Charge (STS)', () => {
     expect(stored.map((t) => [t.txnDate.toISOString().slice(0, 10), t.totalAmount])).toEqual([
       [daysAgo(90), 10_000n], // 100.00 THB
     ]);
+  });
+
+  test('L7-01 (AC-05.15): a form left open across Bangkok midnight moves its date window and default date to the new day without any input', async ({
+    page,
+  }) => {
+    // The browser clock starts 10 s before Bangkok midnight on today's Bangkok date.
+    const day = bangkokToday();
+    const beforeMidnight = new Date(`${day}T23:59:50+07:00`);
+    const afterMidnight = new Date(beforeMidnight.getTime() + 20_000); // 00:00:10 the next day
+    const nextDay = bangkokToday(afterMidnight);
+    await page.clock.install({ time: beforeMidnight });
+
+    await loginAsAlice(page);
+    await page.goto('/transactions/new');
+
+    const date = page.getByTestId('payment-date');
+    await expect(date).toHaveAttribute('max', day);
+    await expect(date).toHaveAttribute('min', oldestAllowedDate(beforeMidnight));
+    await expect(date).toHaveValue(day);
+
+    // Midnight passes while the form is open and nobody touches it.
+    await page.clock.runFor(20_000);
+
+    await expect(date).toHaveAttribute('max', nextDay);
+    await expect(date).toHaveAttribute('min', oldestAllowedDate(afterMidnight));
+    // The untouched default follows today, so a save after midnight is not silently dated yesterday.
+    await expect(date).toHaveValue(nextDay);
+
+    // A date the user typed is theirs: the next midnight moves the window but keeps the value.
+    const typed = bangkokToday(new Date(afterMidnight.getTime() - 3 * 86_400_000));
+    await date.fill(typed);
+    await page.clock.fastForward('24:00:00');
+    const dayAfter = bangkokToday(new Date(afterMidnight.getTime() + 86_400_000));
+    await expect(date).toHaveAttribute('max', dayAfter);
+    await expect(date).toHaveValue(typed);
   });
 });
 

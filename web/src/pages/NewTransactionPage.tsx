@@ -13,7 +13,8 @@ import { Account, AccountType } from '../types/account.types';
 import { ApiErrorResponse } from '../types/auth.types';
 import { CreateTransactionInput } from '../types/transaction.types';
 import { formatSatang, parseThbToSatang } from '../utils/money';
-import { bangkokToday, isBeforeBackdateLimit, isFutureDate, oldestAllowedDate } from '../utils/date';
+import { addCalendarDays, BACKDATE_LIMIT_DAYS, isBeforeBackdateLimit, isFutureDate } from '../utils/date';
+import { useBangkokToday } from '../hooks/useBangkokToday';
 import { colors, font, radius, space } from '../styles/theme';
 
 /** BR-04: 100,000,000.00 THB in integer satang. */
@@ -165,14 +166,17 @@ export const NewTransactionPage: React.FC = () => {
 
   const [mode, setMode] = useState<Mode>('PAYMENT');
   const [sourceId, setSourceId] = useState('');
-  const [txnDate, setTxnDate] = useState(bangkokToday());
+  // null until the user picks a date: the default then follows today, even across midnight (L7-01).
+  const [typedDate, setTypedDate] = useState<string | null>(null);
   const [memo, setMemo] = useState('');
   const [total, setTotal] = useState('');
   const [lines, setLines] = useState<LineDraft[]>(() => [newLine()]);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState<string | null>(null);
-  const today = bangkokToday();
-  const oldest = oldestAllowedDate();
+  // BR-10 window (f-05 §2.2 v1.3), recomputed when the Bangkok day changes while the form is open.
+  const today = useBangkokToday();
+  const oldest = addCalendarDays(today, -BACKDATE_LIMIT_DAYS);
+  const txnDate = typedDate ?? today;
   const config = MODE_CONFIG[mode];
   const testIdPrefix = mode === 'PAYMENT' ? 'payment' : 'receipt';
 
@@ -403,7 +407,7 @@ export const NewTransactionPage: React.FC = () => {
                     value={txnDate}
                     onChange={(event) => {
                       clearErrors();
-                      setTxnDate(event.target.value);
+                      setTypedDate(event.target.value);
                     }}
                   />
                   <FieldError id={`${testIdPrefix}-date-error`} message={fieldErrors.txnDate} />
