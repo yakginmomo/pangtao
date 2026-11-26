@@ -78,6 +78,7 @@ Baseline v1.0 contains 25 FR, 16 BR and 10 NFR. Every one is mapped to a feature
 | v1.9 | 17 Nov 2026 | Lab 5 #27 (repeatable release, Student Guide 7.7): the login subtitle changes so the second pipeline release is visible on the public URL. The deployment guide records the public URL, its running-commit row points to §6, and §6 gains the Cloud Run revision history and migration job checks. No requirement added or dropped | Teammate review, PR #40 (approved and merged) |
 | v2.0 | 25 Nov 2026 | Lab 7 change request (Issue #49): BR-10 revised. A Payment or Receipt dated more than 90 days before today in Bangkok time is rejected with the new code 400 `DATE_TOO_OLD`; opening balances, summaries, history and rows already saved are unchanged. F-05 1.3 and F-06 1.3 add AC-05.14, AC-05.15 and AC-06.12 with TEST-05.14, TEST-05.15 and TEST-06.12; F-04 1.2 is wording only. Recorded before implementation. Impact analysis: `docs/labs/lab-07/change-impact.md`. No requirement added or dropped | Teammate review, PR #50 (approved and merged before implementation) |
 | v2.1 | 26 Nov 2026 | Sprint 2 contracts F-09 1.0 to F-13 1.0 and Sprint 2 README 1.0, recorded before implementation. **Requirement revision (narrowed), F-10 Q-1:** SRS §4 limited a Loan Taken (card) source to Expense lines "in Sprint 1", which left card lending and card-to-Cash moves open; v2.1 makes the Expense-only rule permanent, so every loan and transfer row uses a Cash source. The SRS §4 matrix table is unchanged. Contract revisions: F-05 1.4 and F-06 1.4 move the TEST-05.13/TEST-06.11 cases that the Sprint 2 rows make valid to TEST-11.1, TEST-11.2 and TEST-10.3; F-07 1.2 returns voided transactions in history from F-13 (BR-12), and F-13 §2.4 lists the F-07 tests whose expected values change with it. §1 maps every Sprint 2 AC to FR-04, 09, 11, 14, 15, 16, 21, BR-01, 02, 04, 05, 06, 07, 08, 10, 11, 12, 14, 16 and NFR-02, 03, 08. New error codes `ACCOUNT_NAME_EXISTS` and `TRANSACTION_VOIDED` (Sprint 2 README §2.6). No requirement added or dropped; no AC removed | Teammate review, PR #63 (changes requested twice, addressed, approved and merged) |
+| v2.2 | 27 Nov 2026 | F-11 1.1 (Sprint 2 README §6): TEST-11.8's Receive step corrected to receive into Bank Account from Wallet, so its expected balances (Bank 49,200.00, Wallet 800.00 THB) follow from SRS §4; 1.0's step moved the money the other way. §2.4 names the unit pair tables of TEST-05.13/TEST-06.11 and F-10 TEST-10.10's target-group list, which change with the matrix. Test specification only: no requirement, rule, AC or behaviour changes | Teammate review, PR for Issue #58 |
 
 All assumptions and decisions (A-01–A-04, D-01–D-07) are fully resolved and agreed by the team; zero open items remain.
 
@@ -238,3 +239,31 @@ The same mutation exposed a weak test. With only the unique-violation mapping di
 TEST-10.9 needs "Alice with no loan accounts", but every seeded user owns a Credit Card (Loan Taken). The test archives that zero-balance card for the empty-state step, which `GET /loans` then leaves out (f-10 §1), and unarchives it afterwards.
 
 **Status:** at the time of writing, F-10 is implemented on its branch and all ten ACs pass locally. It is not yet reviewed, merged into `sprint-2-staging` or released. The statuses and the tested commit are updated when it merges.
+
+### F-11 Transfers (contract 1.1, Issue #58)
+
+**Tested version:** branch `feature/F-11-transfers` from `sprint-2-staging` at `92916f0` (merge of PR #67, F-10). Failing-test commit `0d4d17b`; implementation commit `3114e9d` (matrix rows); contract correction `8a40972` (f-11 1.1, traceability v2.2); form commit `5b1ceeb`. `npm run verify` on `5b1ceeb` (Docker `app` container stopped, so E2E used this branch's server): lint and both type-checks clean, 174 unit and API tests passed, 0 failed, 0 skipped (20 files), service-layer line coverage 98.90%, build succeeded, 26 E2E tests passed, 0 failed, 0 skipped. CI runs on the PR.
+
+**Failing-first.** At `0d4d17b`, on the pre-change code, a Cash target failed with `INVALID_TARGET_ACCOUNT` where 201 (API) or no error (unit) was expected: TEST-11.1, 11.2 (U and A), 11.3 and 11.4 (API). TEST-11.7's T−91 transfer returned `INVALID_TARGET_ACCOUNT` instead of `DATE_TOO_OLD`, because the target check runs before the date check. Three disclosures:
+
+- TEST-11.5 (U and A), TEST-11.6 and the unit half of TEST-11.4 already passed at `0d4d17b`. They assert that the source itself, archived Cash targets, a card source with a Cash line and another user's account stay rejected, and that the engines agree on a ledger with transfers. These held before F-11, so they are regression guards, not failing-first evidence.
+- The API half of TEST-11.4 failed at `0d4d17b` in its setup (the first transfer was rejected), not on the summary. A mutation check shows it checks the summary itself: with the summary query counting lines to Cash accounts as expense, TEST-11.4 fails (`income/expense` no longer match `3,000,000 / 120,000`). The file was restored from a saved copy; the run is not a commit.
+- TEST-11.8 (E2E) was added with the form in `5b1ceeb`. Its first run exposed a contract error: f-11 1.0's Receive step moved 200.00 THB from Bank into Wallet, but its expected result needed the opposite direction. f-11 1.1 (`8a40972`) corrects the step before the test was committed; the expected balances are unchanged (Sprint 2 README §6).
+
+**Existing tests changed with the matrix (f-05 1.4, f-06 1.4, f-11 1.1 §2.4).**
+
+- In `3114e9d`: TEST-05.13 (API) loses its Wallet case, now accepted in TEST-11.1; TEST-06.11 (API) loses its Wallet case, now accepted in TEST-11.2. The unit pair tables of TEST-05.13 and TEST-06.11 now accept Cash → Cash on both forms; every pair is still asserted.
+- In `5b1ceeb`: F-10 TEST-10.10's exact target-group lists end with **Transfer to** and **Transfer from**, as f-10 §2.2 specifies.
+
+| AC | TEST | Level | Test file | Result |
+|---|---|---|---|---|
+| AC-11.1 | TEST-11.1 | U, A | `tests/unit/transfers.rules.test.ts`, `tests/api/transfers.api.test.ts` | PASS; failing-first `0d4d17b` |
+| AC-11.2 | TEST-11.2 | U, A | `tests/unit/transfers.rules.test.ts`, `tests/api/transfers.api.test.ts` | PASS; failing-first `0d4d17b` |
+| AC-11.3 | TEST-11.3 | A | `tests/api/transfers.api.test.ts` | PASS; failing-first `0d4d17b` |
+| AC-11.4 | TEST-11.4 | U, A | `tests/unit/transfers.rules.test.ts`, `tests/api/transfers.api.test.ts` | PASS; API failing-first `0d4d17b` (in setup) and the mutation check above; unit is a regression guard |
+| AC-11.5 | TEST-11.5 | U, A | `tests/unit/transfers.rules.test.ts`, `tests/api/transfers.api.test.ts` | PASS; regression guard (passed before F-11) |
+| AC-11.6 | TEST-11.6 | A | `tests/api/transfers.api.test.ts` | PASS; regression guard (passed before F-11) |
+| AC-11.7 | TEST-11.7 | A | `tests/api/transfers.api.test.ts` | PASS; failing-first `0d4d17b` |
+| AC-11.8 | TEST-11.8 | E | `tests/e2e/transfers.spec.ts` | PASS locally (step as corrected in f-11 1.1) |
+
+**Status:** at the time of writing, F-11 is implemented on its branch and all eight ACs pass locally. It is not yet reviewed, merged into `sprint-2-staging` or released. The statuses and the tested commit are updated when it merges.

@@ -1,6 +1,6 @@
 # F-11 Transfers: Engineering Contract
 
-Requirements: FR-15; BR-01, BR-02, BR-04, BR-05, BR-06, BR-07, BR-08, BR-10, BR-14; NFR-03, NFR-08 · Depends on: F-05, F-06 · Issue: #58 · Contract version: 1.0 (see [version history](README.md#6-contract-version-history)) · Suggested branch: `feature/F-11-transfers`
+Requirements: FR-15; BR-01, BR-02, BR-04, BR-05, BR-06, BR-07, BR-08, BR-10, BR-14; NFR-03, NFR-08 · Depends on: F-05, F-06 · Issue: #58 · Contract version: 1.1 (see [version history](README.md#6-contract-version-history)) · Suggested branch: `feature/F-11-transfers`
 
 Shared conventions and error codes are in [Sprint 1 README](../sprint-1/README.md) §2 and [Sprint 2 README](README.md) §2; the Sprint 2 Definition of Done is in [Sprint 2 README](README.md) §5.
 
@@ -61,6 +61,8 @@ The Sprint 1 matrix tests treated a Cash target as invalid. This feature makes i
 
 - F-05 AC-05.13 / TEST-05.13: the Wallet (Cash) target case moves to TEST-11.1 as an accepted transfer. The Salary (Income), self and archived-target cases stay.
 - F-06 AC-06.11 / TEST-06.11: the Wallet (Cash) target case moves to TEST-11.2 as an accepted transfer.
+- (1.1) The unit halves of TEST-05.13 and TEST-06.11 (`tests/unit/allocation.rules.test.ts`) loop over every source and target type against an expected matrix. Their expected matrix gains Cash → Cash on both forms, as AC-05.13 and AC-06.11 v1.4 state; every pair is still asserted.
+- (1.1) F-10 TEST-10.10 (`tests/e2e/loans.spec.ts`) asserts the exact list of target groups. With F-11 the lists end with **Transfer to** (Payment tab) and **Transfer from** (Receive tab), as f-10 §2.2 already specifies; only that expected list changes.
 
 ---
 
@@ -90,7 +92,7 @@ The Sprint 1 matrix tests treated a Cash target as invalid. This feature makes i
 | **TEST-11.5** | AC-11.5 | U, A | Alice; a Cash account `Savings` inserted and archived directly in the database with the ledger helper (F-11 does not depend on F-09) | POST PAYMENT Bank Account → Bank Account; PAYMENT Bank Account → Savings; RECEIPT into Bank Account with line Savings; PAYMENT from Credit Card → Wallet | Each returns 400 INVALID_TARGET_ACCOUNT; transaction count and every balance unchanged. |
 | **TEST-11.6** | AC-11.6 | A | Bob logged in; Alice's Wallet id; Admin logged in | Bob POSTs PAYMENT from his Bank Account with a line to Alice's Wallet; Admin POSTs a transfer; an anonymous caller POSTs a transfer | Bob: 404 NOT_FOUND, nothing saved, Alice's Wallet unchanged. Admin: 403 FORBIDDEN. Anonymous: 401 UNAUTHENTICATED. |
 | **TEST-11.7** | AC-11.7 | A | Alice; Bank Account opening 50,000.00 THB; dates from the Bangkok clock at run time | POST PAYMENT Bank Account → Wallet 100.00 THB dated T−91; then dated T−90 | T−91: 400 DATE_TOO_OLD, nothing saved. T−90: 201. |
-| **TEST-11.8** | AC-11.8 | E | Alice logged in; Bank Account opening 50,000.00 THB | On `/transactions/new` Payment tab choose Bank Account, total 1,000.00, target Wallet from **Transfer to**, save; then on the Receive tab choose Wallet, total 200.00, target Bank Account from **Transfer from**, save; check that the selected source never appears in its own target list | Both saves redirect to the Dashboard; Bank Account shows 49,200.00 ฿ and Wallet 800.00 ฿; the source is never offered as a target. |
+| **TEST-11.8** | AC-11.8 | E | Alice logged in; Bank Account opening 50,000.00 THB | On `/transactions/new` Payment tab choose Bank Account, total 1,000.00, target Wallet from **Transfer to**, save; then on the Receive tab choose Bank Account as the receiving account, total 200.00, target Wallet from **Transfer from**, save (1.1: 1.0 named Wallet as the receiving account and Bank Account as the target, which moves 200.00 the other way and gives Bank 48,800.00 ฿ and Wallet 1,200.00 ฿, contradicting the expected result); check that the selected source never appears in its own target list | Both saves redirect to the Dashboard; Bank Account shows 49,200.00 ฿ and Wallet 800.00 ฿; the source is never offered as a target. |
 
 ---
 
@@ -100,5 +102,5 @@ The Sprint 1 matrix tests treated a Cash target as invalid. This feature makes i
 - Failing-first evidence is retained for AC-11.1 and AC-11.2 (the new matrix rows), shown failing with `INVALID_TARGET_ACCOUNT` on the pre-change code, and for AC-11.4 (summary unchanged).
 - TEST-05.13 and TEST-06.11 are changed only as listed in §2.4, in the same commit as the matrix change, and the PR says so.
 - The NFR-03 invariant test includes transfers.
-- F-11 merges before F-10, which edits the same allowed-target tables.
+- F-11 merges before F-10, which edits the same allowed-target tables. (1.1: F-10 was ready first and merged in PR #67, so F-11 branches from `sprint-2-staging` after it and carries no rebase.)
 - The Sprint 2 DoD in [README.md](README.md) §5 is met.

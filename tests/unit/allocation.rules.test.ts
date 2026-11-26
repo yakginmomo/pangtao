@@ -40,10 +40,10 @@ describe('F-05 Payment and Charge (unit rules)', () => {
     expect(thrownCode(() => checkAllocationSum(MAX, [MAX - 1n, 1n]))).toBeNull();
   });
 
-  // f-05 1.4: AC-05.13 names the matrix; F-10 adds Cash → Loan Given. Every pair is still checked.
-  it('TEST-05.13 (AC-05.13): only the matrix is accepted (Cash → Expense, Loan Taken or Loan Given; Loan Taken → Expense)', () => {
+  // f-05 1.4: AC-05.13 names the matrix; F-10 adds Cash → Loan Given, F-11 Cash → Cash. Every pair is still checked.
+  it('TEST-05.13 (AC-05.13): only the matrix is accepted (Cash → Expense, Loan Taken, Loan Given or Cash; Loan Taken → Expense)', () => {
     const allowed: Record<'CASH' | 'LOAN_TAKEN', AccountType[]> = {
-      CASH: ['EXPENSE', 'LOAN_TAKEN', 'LOAN_GIVEN'],
+      CASH: ['EXPENSE', 'LOAN_TAKEN', 'LOAN_GIVEN', 'CASH'],
       LOAN_TAKEN: ['EXPENSE'],
     };
     const allTypes: AccountType[] = ['CASH', 'LOAN_TAKEN', 'LOAN_GIVEN', 'INCOME', 'EXPENSE'];
@@ -93,9 +93,9 @@ describe('F-06 Received Money (unit rules)', () => {
     expect(thrownCode(() => checkAllocationSum(500_000n, [300_000n, 200_000n]))).toBeNull();
   });
 
-  // f-06 1.4: AC-06.11 names the matrix; F-10 adds Loan Given and Loan Taken. Every pair is still checked.
-  it('TEST-06.11 (AC-06.11): only Cash → Income, Loan Given or Loan Taken is accepted for a receipt', () => {
-    const allowed: AccountType[] = ['INCOME', 'LOAN_GIVEN', 'LOAN_TAKEN'];
+  // f-06 1.4: AC-06.11 names the matrix; F-10 adds Loan Given and Loan Taken, F-11 Cash. Every pair is still checked.
+  it('TEST-06.11 (AC-06.11): only Cash → Income, Loan Given, Loan Taken or Cash is accepted for a receipt', () => {
+    const allowed: AccountType[] = ['INCOME', 'LOAN_GIVEN', 'LOAN_TAKEN', 'CASH'];
     const allTypes: AccountType[] = ['CASH', 'LOAN_TAKEN', 'LOAN_GIVEN', 'INCOME', 'EXPENSE'];
 
     for (const targetType of allTypes) {

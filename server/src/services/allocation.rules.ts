@@ -17,14 +17,14 @@ export interface RuleAccount {
  * only (srs v2.1, F-10 Q-1); every loan row uses a Cash source.
  */
 const PAYMENT_TARGETS: Readonly<Partial<Record<AccountType, ReadonlySet<AccountType>>>> = {
-  // spending; card or loan repayment; lending (F-10)
-  CASH: new Set<AccountType>(['EXPENSE', 'LOAN_TAKEN', 'LOAN_GIVEN']),
+  // spending; card or loan repayment; lending (F-10); transfer out to another Cash account (F-11)
+  CASH: new Set<AccountType>(['EXPENSE', 'LOAN_TAKEN', 'LOAN_GIVEN', 'CASH']),
   LOAN_TAKEN: new Set<AccountType>(['EXPENSE']), // card charge
 };
 
 const RECEIPT_TARGETS: Readonly<Partial<Record<AccountType, ReadonlySet<AccountType>>>> = {
-  // earnings; repayment received and borrowing (F-10)
-  CASH: new Set<AccountType>(['INCOME', 'LOAN_GIVEN', 'LOAN_TAKEN']),
+  // earnings; repayment received and borrowing (F-10); transfer in from another Cash account (F-11)
+  CASH: new Set<AccountType>(['INCOME', 'LOAN_GIVEN', 'LOAN_TAKEN', 'CASH']),
 };
 
 /** BR-05: line amounts must sum exactly to the total. Summed as bigint, so never rounded. */
