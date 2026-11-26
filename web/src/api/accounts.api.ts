@@ -1,10 +1,13 @@
 import { handleResponse } from './http';
 import {
   Account,
+  AccountResponse,
   AccountsResponse,
+  CreateAccountInput,
   CreateOpeningBalanceInput,
   OpeningBalanceResponse,
   OpeningBalanceTransaction,
+  UpdateAccountInput,
 } from '../types/account.types';
 
 export const accountsQueryKey = ['accounts'] as const;
@@ -29,4 +32,28 @@ export async function createOpeningBalance(
   });
   const data = await handleResponse<OpeningBalanceResponse>(res);
   return data.transaction;
+}
+
+/** POST /api/v1/accounts: create an account (f-09 §2.1). A duplicate name is 409 ACCOUNT_NAME_EXISTS. */
+export async function createAccount(input: CreateAccountInput): Promise<Account> {
+  const res = await fetch('/api/v1/accounts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(input),
+  });
+  const data = await handleResponse<AccountResponse>(res);
+  return data.account;
+}
+
+/** PATCH /api/v1/accounts/:id: rename, archive or unarchive (f-09 §2.1). */
+export async function updateAccount(accountId: string, input: UpdateAccountInput): Promise<Account> {
+  const res = await fetch(`/api/v1/accounts/${encodeURIComponent(accountId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(input),
+  });
+  const data = await handleResponse<AccountResponse>(res);
+  return data.account;
 }

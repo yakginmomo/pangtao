@@ -45,3 +45,20 @@ export interface CreateOpeningBalanceInput {
   /** YYYY-MM-DD */
   date: string;
 }
+
+/** f-09 §2.1: POST /api/v1/accounts. `subtype` only for Cash (WALLET, BANK) and Loan Taken (CREDIT_CARD, OTHER). */
+export interface CreateAccountInput {
+  name: string;
+  type: AccountType;
+  subtype?: AccountSubtype | null;
+}
+
+/** f-09 §2.1: PATCH /api/v1/accounts/:id, at least one field. */
+export interface UpdateAccountInput {
+  name?: string;
+  isArchived?: boolean;
+}
+
+export interface AccountResponse {
+  account: Account;
+}
