@@ -1,0 +1,119 @@
+{
+  "today": "2026-11-26",
+  "results": [
+    {
+      "id": "A1 opening balance Bank 5,000,000 satang",
+      "expected": 201,
+      "actual": 201,
+      "code": null,
+      "pass": true
+    },
+    {
+      "id": "A2 receipt Bank 3,000,000 satang -> Salary",
+      "expected": 201,
+      "actual": 201,
+      "code": null,
+      "pass": true
+    },
+    {
+      "id": "A3 card charge 120,000 satang (Dining 70,000 + Groceries 50,000)",
+      "expected": 201,
+      "actual": 201,
+      "code": null,
+      "pass": true
+    },
+    {
+      "id": "A4 card repayment Bank 80,000 satang -> Credit Card",
+      "expected": 201,
+      "actual": 201,
+      "code": null,
+      "pass": true
+    },
+    {
+      "id": "A5 balances after journey (satang)",
+      "expected": {
+        "Bank": 7920000,
+        "Card": 40000
+      },
+      "actual": {
+        "Bank": 7920000,
+        "Card": 40000
+      },
+      "pass": true
+    },
+    {
+      "id": "A6 month summary (satang)",
+      "expected": {
+        "income": 3000000,
+        "expense": 120000,
+        "net": 2880000
+      },
+      "actual": {
+        "income": 3000000,
+        "expense": 120000,
+        "net": 2880000
+      },
+      "pass": true
+    },
+    {
+      "id": "A7 history rows",
+      "expected": 4,
+      "actual": 4,
+      "pass": true
+    },
+    {
+      "id": "A8 under-allocated payment rejected",
+      "expected": 400,
+      "actual": 400,
+      "code": "INVALID_ALLOCATION_SUM",
+      "pass": true
+    },
+    {
+      "id": "A9 nothing saved after rejection",
+      "expected": 4,
+      "actual": 4,
+      "pass": true
+    },
+    {
+      "id": "A10 future date rejected",
+      "expected": 400,
+      "actual": 400,
+      "code": "FUTURE_DATE_NOT_ALLOWED",
+      "pass": true
+    },
+    {
+      "id": "A11 T-91 rejected (BR-10 v2.0)",
+      "expected": 400,
+      "actual": 400,
+      "code": "DATE_TOO_OLD",
+      "pass": true
+    },
+    {
+      "id": "A12 Bob reading Alice transaction",
+      "expected": 404,
+      "actual": 404,
+      "code": "NOT_FOUND",
+      "pass": true
+    },
+    {
+      "id": "A13 Admin reading accounts",
+      "expected": 403,
+      "actual": 403,
+      "code": "FORBIDDEN",
+      "pass": true
+    },
+    {
+      "id": "A14 anonymous history",
+      "expected": 401,
+      "actual": 401,
+      "code": "UNAUTHENTICATED",
+      "pass": true
+    },
+    {
+      "id": "A15 detail after re-login",
+      "expected": "0a7a5e95-3ed6-4173-a6a4-8f28874aefb9",
+      "actual": "0a7a5e95-3ed6-4173-a6a4-8f28874aefb9",
+      "pass": true
+    }
+  ]
+}
