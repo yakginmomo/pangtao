@@ -26,8 +26,8 @@ AC and test IDs follow the convention AC-NN.k and TEST-NN.k, where NN is the fea
 | FR-16 | F-13 | 2 | AC-13.1–13.10 / TEST-13.1–13.10 (F-13 1.1) · U, A, E |
 | FR-17 | F-07 | 1 | AC-07.x / TEST-07.x · A, E |
 | FR-18 | F-14 | 3 | AC-14.1–14.9 / TEST-14.1–14.9 (F-14 1.0, planned) · U, A, E |
-| FR-19 | F-15 | 3 | AC-15.1–15.5, 15.9 / TEST-15.1–15.5, 15.9 (F-15 1.0, tested) · A, E |
-| FR-20 | F-15 | 3 | AC-15.6–15.9 / TEST-15.6–15.9 (F-15 1.0, tested) · A, E |
+| FR-19 | F-15 | 3 | AC-15.1–15.5, 15.9 / TEST-15.1–15.5, 15.9 (F-15 1.0, accepted in `v0.3.0`) · A, E |
+| FR-20 | F-15 | 3 | AC-15.6–15.9 / TEST-15.6–15.9 (F-15 1.0, accepted in `v0.3.0`) · A, E |
 | FR-21 | F-10 | 2 | AC-10.8, 10.9 / TEST-10.8, 10.9 (F-10 1.0) · A, E |
 | FR-22 | F-08 | 1 | AC-08.x / TEST-08.x · U, A, E |
 | FR-23 | F-16 | 3 | AC-16.1–16.3, 16.5–16.8 / TEST-16.1–16.3, 16.5–16.8 (F-16 1.0, planned) · U, A, E |
@@ -47,7 +47,7 @@ AC and test IDs follow the convention AC-NN.k and TEST-NN.k, where NN is the fea
 | BR-12 | F-13; F-14, F-15, F-16 | 2, 3 | AC-13.5, 13.6 / TEST-13.5, 13.6, 13.10 (F-13 1.1) · A, E; until F-13 merges, F-07 history lists non-voided transactions only (f-07 1.2); Sprint 3 (planned): AC-14.6 (filtered history keeps voided rows), AC-15.4 (voided favorites), AC-16.2 (reports exclude voided) · A |
 | BR-13 | F-02 | 1 | AC-02.x · A |
 | BR-14 | F-04, F-05, F-06 (archived rule), F-09 (lifecycle), F-10 to F-13 | 1, 2 | AC-04.10 · A, E; AC-05.12 / TEST-05.12 · A (archived source); AC-05.13 · U, A (archived target, BR-06); AC-06.10 / TEST-06.10 · A (archived receiving account); Sprint 2: AC-09.2 (subtype valid for type), AC-09.3 (unique names), AC-09.5 (type and subtype fixed), AC-09.6, 09.7 (archive and unarchive), AC-10.6, 11.5 (archived loan or Cash target), AC-12.5 (archived account's opening balance), AC-13.3, 13.4 (edits: newly chosen archived account rejected, archived account kept in the same role) · U, A |
-| BR-15 | F-15 | 3 | AC-15.6–15.8 / TEST-15.6–15.8 (F-15 1.0, tested) · A, E |
+| BR-15 | F-15 | 3 | AC-15.6–15.8 / TEST-15.6–15.8 (F-15 1.0, accepted in `v0.3.0`) · A, E |
 | BR-16 | F-05, F-06; F-10, F-13 | 1, 2 | AC-05.10, AC-06.4 / TEST-05.10, TEST-06.4 · A; Sprint 2: AC-10.6 (Loan Given source rejected), AC-13.3 (edit re-checks the source type) · U, A |
 | NFR-01 | F-01 | 1 | AC-01.x · A |
 | NFR-02 | F-01 (all routes) | 1, re-run in 2, 3 | AC-01.x · A route-list test; Sprint 2 routes added to it (F-09, F-10, F-12, F-13 DoD), anonymous 401 in AC-09.8, 10.8, 11.6, 12.6, 13.8 · A; Sprint 3 (planned): routes added by F-15, F-16, F-17 (DoD), anonymous 401 in AC-14.8, 15.5, 16.6, 17.5; full list on the release commit in AC-18.6 · A |
@@ -355,4 +355,4 @@ The f-12 §5 DoD checks are the untagged tests "two parallel removes of the same
 | AC-15.8 | TEST-15.8 | E | `tests/e2e/favorites-duplicate.spec.ts` | PASS locally |
 | AC-15.9 | TEST-15.9 | E | `tests/e2e/favorites-duplicate.spec.ts` | PASS locally |
 
-**Status:** **tested** (updated 27 Nov 2026). F-15 merged into `sprint-3-staging` by PR #81 (`49018bc`). CI run [45937132716](https://github.com/yakginmomo/pangtao/actions/runs/45937132716) on the PR head `899b995`, whose tree equals `49018bc`: lint, type-check and build passed, 204 unit and API tests and 35 E2E tests passed, 0 failed, 0 skipped, Docker image built. Not yet released: it becomes **accepted** after the `v0.3.0` release to `main` and its post-deploy checks (Issue #79). Earlier status text is in git history.
+**Status:** **accepted** (updated 27 Nov 2026, Issue #79). F-15 merged into `sprint-3-staging` by PR #81 (`49018bc`) and released to `main` in PR #84 (`b023708`, tag `v0.3.0`), deployed as `pangtao-00012-29s`. The deploy run [45948980771](https://github.com/yakginmomo/pangtao/actions/runs/45948980771) on `b023708` passed: 204 unit and API tests and 35 E2E tests, 0 failed, 0 skipped. **Accepted** on 27 Nov 2026: post-deploy checks PD3-1 to PD3-11 (Sprint 3 journey steps 2, 5 and 6 and persistence) passed on `pangtao-00012-29s` (re-run and deviations in the [release record](sprints/sprint-3/release-v0.3.0.md) §2.2–§2.3). Earlier status text is in git history.

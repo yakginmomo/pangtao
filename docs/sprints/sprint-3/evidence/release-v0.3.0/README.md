@@ -10,3 +10,5 @@ Screenshots for [release-v0.3.0.md](../../release-v0.3.0.md) §2.2–§2.3, take
 | `04-pd3-voided-favorite-409.png` | PD3-8 | Console in Alice's session: `favorite voided 409 TRANSACTION_VOIDED` on `b58f4921…` |
 | `05-pd3-bob-placeholder-400.png` | PD3-9 (deviation) | Incognito as Bob: snippet sent with the placeholder id, 400 (§2.3 item 2) |
 | `06-pd3-bob-404.png` | PD3-9 | Incognito as Bob (`running as bob@example.test`): `PATCH …/ce6627fb…/favorite` 404 |
+| `07-pd3-11-favorites.png` | PD3-11 | Favorites after log out and log in: one row, Receipt 30,000.00 (Bank Account), Remove from favorites, no "Edited", Showing 1–1 of 1 |
+| `08-pd3-11-history.png` | PD3-11 | History after log out and log in: 11 transactions, copy at the top unstarred, star on the original Salary receipt only |

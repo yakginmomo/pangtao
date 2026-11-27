@@ -71,7 +71,7 @@ Run by Supichaya on 27 Nov 2026 in the browser on the public URL (`pangtao-83791
 | PD3-8 | Step 5: mark the voided card charge `b58f4921` as favorite | AC-15.4 | 409 `TRANSACTION_VOIDED` | Console `favorite voided 409 TRANSACTION_VOIDED`; the row still shows no star (screenshot 04) | PASS |
 | PD3-9 | Step 6: Bob unmarks Alice's Salary receipt (`PATCH …/ce6627fb…/favorite`, Incognito) | AC-15.5 | 404; Alice's flag unchanged | `running as bob@example.test`, `bob favorite 404` (screenshot 06). The first attempt sent the placeholder id and got 400 (§2.3 item 2) | PASS (re-run) |
 | PD3-10 | Step 6: anonymous caller | AC-15.5 | 401 | PD3-2, PD3-3 | PASS |
-| PD3-11 | Favorites page and persistence: Alice logs out and in again | AC-15.3, 15.9 | Favorites lists the Salary receipt (no "Edited"); History still has 11 transactions with the star on the original | *Pending screenshots* | PENDING |
+| PD3-11 | Favorites page and persistence: Alice logs out and in again | AC-15.3, 15.9 | Favorites lists the Salary receipt (no "Edited"); History still has 11 transactions with the star on the original | Favorites (`/favorites`): one row, the 27 Nov 2026 Receipt 30,000.00 into Bank Account, with "Remove from favorites" and Duplicate, no "Edited", "Showing 1–1 of 1" (screenshot 07). History: 11 transactions, the copy at the top without a star, the star on the original only (screenshot 08). Bob's refused PATCH (PD3-9) left the flag set | PASS |
 
 ### 2.3 Deviations
 
@@ -88,8 +88,7 @@ Run by Supichaya on 27 Nov 2026 in the browser on the public URL (`pangtao-83791
 - [x] Tag `v0.3.0` on `b023708`.
 - [x] Revision ↔ commit ↔ workflow run recorded (§1).
 - [x] Anonymous post-deploy checks recorded (§2.1).
-- [x] F-15 journey PD3-5 to PD3-10 recorded as passed (§2.2).
-- [ ] PD3-11 Favorites page and persistence screenshots.
-- [ ] F-15 marked **accepted** in Sprint 3 README §7.2 and traceability §5.
+- [x] F-15 journey PD3-5 to PD3-11 recorded as passed, including the Favorites page and persistence (§2.2).
+- [x] F-15 marked **accepted** in Sprint 3 README §7.2 and traceability §1 and §5.
 - [ ] Close Issues #73 and #79.
 - [ ] Reset Alice's ledger before the `v1.0.0` journey (§2.3 items 3 and 4).
