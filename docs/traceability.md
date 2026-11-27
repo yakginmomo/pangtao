@@ -11,10 +11,10 @@ AC and test IDs follow the convention AC-NN.k and TEST-NN.k, where NN is the fea
 | FR-01 | F-01 | 1 | AC-01.x / TEST-01.x · A, E |
 | FR-02 | F-01 | 1 | AC-01.x / TEST-01.x · A, E |
 | FR-03 | F-01 | 1 | AC-01.x / TEST-01.x · A |
-| FR-04 | F-01; F-09 to F-13 (new routes) | 1, 2 | AC-01.x / TEST-01.x · A (role and ownership); Sprint 2: AC-09.8, 10.8, 11.6, 12.6, 13.8 · A |
+| FR-04 | F-01; F-09 to F-13 (new routes); F-14 to F-17 | 1, 2, 3 | AC-01.x / TEST-01.x · A (role and ownership); Sprint 2: AC-09.8, 10.8, 11.6, 12.6, 13.8 · A; Sprint 3 (planned): AC-14.8, 15.5, 16.6, 17.5 · A |
 | FR-05 | F-02 | 1 | AC-02.x / TEST-02.x · A |
 | FR-06 | F-02 | 1 | AC-02.x / TEST-02.x · A, E |
-| FR-07 | F-17 | 3 | Contract in Sprint 3 · A |
+| FR-07 | F-17 | 3 | AC-17.1–17.7 / TEST-17.1–17.7 (F-17 1.0, planned) · U, A, E |
 | FR-08 | F-03, F-08 | 1 | AC-03.x / TEST-03.x · U, A, E (accounts and balances API); AC-08.x / TEST-08.x · U, A, E (income/expense totals) |
 | FR-09 | F-09 | 2 | AC-09.1–09.10 / TEST-09.1–09.10 (F-09 1.0) · U, A, E |
 | FR-10 | F-04 | 1 | AC-04.x / TEST-04.x · U, A |
@@ -25,38 +25,38 @@ AC and test IDs follow the convention AC-NN.k and TEST-NN.k, where NN is the fea
 | FR-15 | F-11 | 2 | AC-11.1–11.8 / TEST-11.1–11.8 (F-11 1.0) · U, A, E |
 | FR-16 | F-13 | 2 | AC-13.1–13.10 / TEST-13.1–13.10 (F-13 1.1) · U, A, E |
 | FR-17 | F-07 | 1 | AC-07.x / TEST-07.x · A, E |
-| FR-18 | F-14 | 3 | Contract in Sprint 3 · A |
-| FR-19 | F-15 | 3 | Contract in Sprint 3 · A |
-| FR-20 | F-15 | 3 | Contract in Sprint 3 · A, E |
+| FR-18 | F-14 | 3 | AC-14.1–14.9 / TEST-14.1–14.9 (F-14 1.0, planned) · U, A, E |
+| FR-19 | F-15 | 3 | AC-15.1–15.5, 15.9 / TEST-15.1–15.5, 15.9 (F-15 1.0, planned) · A, E |
+| FR-20 | F-15 | 3 | AC-15.6–15.9 / TEST-15.6–15.9 (F-15 1.0, planned) · A, E |
 | FR-21 | F-10 | 2 | AC-10.8, 10.9 / TEST-10.8, 10.9 (F-10 1.0) · A, E |
 | FR-22 | F-08 | 1 | AC-08.x / TEST-08.x · U, A, E |
-| FR-23 | F-16 | 3 | Contract in Sprint 3 · A |
-| FR-24 | F-16 | 3 | Contract in Sprint 3 · A |
+| FR-23 | F-16 | 3 | AC-16.1–16.3, 16.5–16.8 / TEST-16.1–16.3, 16.5–16.8 (F-16 1.0, planned) · U, A, E |
+| FR-24 | F-16 | 3 | AC-16.4–16.8 / TEST-16.4–16.8 (F-16 1.0, planned) · U, A, E |
 | FR-25 | F-07 | 1 | AC-07.3 / TEST-07.3 · A; detail screen checked end to end |
-| BR-01 | F-01 (all routes), F-03, F-07, F-08; F-09 to F-13 | 1, 2 | AC-01.x, 03.x, 07.x, 08.x · A (cross-user access); AC-01.9 verified by TEST-07.4 (f-01 v1.1); Sprint 2: AC-09.3 (names unique per user), 09.8, 10.6, 10.8, 11.6, 12.6, 13.8 · A |
-| BR-02 | F-01 (all routes), F-02, F-03, F-07, F-08; F-09 to F-13 | 1, 2 | AC-01.x, 02.x, 03.x, 07.x, 08.x · A (admin denied financial data); Sprint 2: AC-09.8, 10.8, 11.6, 12.6, 13.8 · A |
+| BR-01 | F-01 (all routes), F-03, F-07, F-08; F-09 to F-13; F-14 to F-16 | 1, 2, 3 | AC-01.x, 03.x, 07.x, 08.x · A (cross-user access); AC-01.9 verified by TEST-07.4 (f-01 v1.1); Sprint 2: AC-09.3 (names unique per user), 09.8, 10.6, 10.8, 11.6, 12.6, 13.8 · A; Sprint 3 (planned): AC-14.8, 15.5, 16.6 · A |
+| BR-02 | F-01 (all routes), F-02, F-03, F-07, F-08; F-09 to F-13; F-14 to F-17 | 1, 2, 3 | AC-01.x, 02.x, 03.x, 07.x, 08.x · A (admin denied financial data); Sprint 2: AC-09.8, 10.8, 11.6, 12.6, 13.8 · A; Sprint 3 (planned): AC-14.8, 15.5, 16.6 (Administrator 403), AC-17.1, 17.2 (new user has no financial records created by the Administrator) · A |
 | BR-03 | F-02 | 1 | AC-02.x · A |
 | BR-04 | F-04, F-05, F-06; F-12, F-13 | 1, 2 | AC-04.x, 05.x, 06.x · U, A; Sprint 2: AC-12.2 (corrected opening amount), AC-13.3 (edited amounts) · A; F-10 and F-11 reuse the F-05/F-06 amount checks |
 | BR-05 | F-05, F-06; F-11, F-13 | 1, 2 | AC-05.x, 06.x · U, A; Sprint 2: AC-11.3 (mixed transfer and expense lines), AC-13.3 (edit re-checks the sum) · U, A |
 | BR-06 | F-05, F-06 (subset); F-10, F-11 (rest) | 1, 2 | AC-05.x (incl. AC-05.6, AC-05.13), 06.x · U, A; Sprint 2 rows: AC-10.1–10.3, 10.6 (F-10), AC-11.1, 11.2, 11.5 (F-11), AC-13.3 (edit re-checks targets) · U, A |
 | BR-07 | F-03, F-05, F-06; F-10 to F-13 | 1, 2 | AC-03.x, 05.x, 06.x · U, A; Sprint 2: AC-10.1–10.4, 10.7, 11.1–11.3, 12.1, 12.3, 13.1, 13.2, 13.5 · U, A |
-| BR-08 | F-08; F-10 to F-13 | 1, 2 | AC-08.x · U, A; Sprint 2: AC-10.5, 11.4 (loans and transfers excluded), AC-12.1 (opening corrections excluded), AC-13.1, 13.5 (edits and voids reflected) · U, A |
+| BR-08 | F-08; F-10 to F-13; F-16 | 1, 2, 3 | AC-08.x · U, A; Sprint 2: AC-10.5, 11.4 (loans and transfers excluded), AC-12.1 (opening corrections excluded), AC-13.1, 13.5 (edits and voids reflected) · U, A; Sprint 3 (planned): AC-16.1, 16.2, 16.4, 16.7 (category and monthly reports use the F-08 rules) · U, A |
 | BR-09 | F-05, F-08 | 1 | AC-05.x, 08.x · A, E |
 | BR-10 | F-04, F-05, F-06; F-11 to F-13 | 1, 2 | AC-04.6, AC-05.8, AC-06.6 (future date) · U, A; v2.0 (Lab 7): AC-05.14 · U, A, AC-05.15 · E, AC-06.12 · A (90-day Payment/Receipt limit); Sprint 2: AC-11.7 (transfers), AC-12.2 (opening corrections: no 90-day limit), AC-13.3, 13.4 (edits: changed date checked, unchanged date kept) · U, A |
 | BR-11 | F-04, F-12 | 1, 2 | AC-04.x · A; AC-12.1, 12.3, 12.4 (F-12) · A |
-| BR-12 | F-13 | 2 | AC-13.5, 13.6 / TEST-13.5, 13.6, 13.10 (F-13 1.1) · A, E; until F-13 merges, F-07 history lists non-voided transactions only (f-07 1.2) |
+| BR-12 | F-13; F-14, F-15, F-16 | 2, 3 | AC-13.5, 13.6 / TEST-13.5, 13.6, 13.10 (F-13 1.1) · A, E; until F-13 merges, F-07 history lists non-voided transactions only (f-07 1.2); Sprint 3 (planned): AC-14.6 (filtered history keeps voided rows), AC-15.4 (voided favorites), AC-16.2 (reports exclude voided) · A |
 | BR-13 | F-02 | 1 | AC-02.x · A |
 | BR-14 | F-04, F-05, F-06 (archived rule), F-09 (lifecycle), F-10 to F-13 | 1, 2 | AC-04.10 · A, E; AC-05.12 / TEST-05.12 · A (archived source); AC-05.13 · U, A (archived target, BR-06); AC-06.10 / TEST-06.10 · A (archived receiving account); Sprint 2: AC-09.2 (subtype valid for type), AC-09.3 (unique names), AC-09.5 (type and subtype fixed), AC-09.6, 09.7 (archive and unarchive), AC-10.6, 11.5 (archived loan or Cash target), AC-12.5 (archived account's opening balance), AC-13.3, 13.4 (edits: newly chosen archived account rejected, archived account kept in the same role) · U, A |
-| BR-15 | F-15 | 3 | Contract in Sprint 3 · A |
+| BR-15 | F-15 | 3 | AC-15.6–15.8 / TEST-15.6–15.8 (F-15 1.0, planned) · A, E |
 | BR-16 | F-05, F-06; F-10, F-13 | 1, 2 | AC-05.10, AC-06.4 / TEST-05.10, TEST-06.4 · A; Sprint 2: AC-10.6 (Loan Given source rejected), AC-13.3 (edit re-checks the source type) · U, A |
 | NFR-01 | F-01 | 1 | AC-01.x · A |
-| NFR-02 | F-01 (all routes) | 1, re-run in 2, 3 | AC-01.x · A route-list test; Sprint 2 routes added to it (F-09, F-10, F-12, F-13 DoD), anonymous 401 in AC-09.8, 10.8, 11.6, 12.6, 13.8 · A |
+| NFR-02 | F-01 (all routes) | 1, re-run in 2, 3 | AC-01.x · A route-list test; Sprint 2 routes added to it (F-09, F-10, F-12, F-13 DoD), anonymous 401 in AC-09.8, 10.8, 11.6, 12.6, 13.8 · A; Sprint 3 (planned): routes added by F-15, F-16, F-17 (DoD), anonymous 401 in AC-14.8, 15.5, 16.6, 17.5; full list on the release commit in AC-18.6 · A |
 | NFR-03 | F-03 | 1, re-run in 2 | AC-03.x · U, A invariant test; re-run with transfers, loans, edits and voids: AC-11.4, AC-10.5, AC-13.9 · U, A |
 | NFR-04 | F-01 | 1 | AC-01.x · A |
 | NFR-05 | F-19 (local run verified in Sprint 1; Docker in Lab 5 #23) | 1 local, Lab 5 Docker | README run-through; clean-clone container run (§3, Lab 5 #23) |
 | NFR-06 | F-19 (local restart check in Sprint 1; redeploy in Lab 5) | 1 local, Lab 5 | Restart check; Lab 5 evidence |
-| NFR-07 | F-18 | 3 | Timing script |
-| NFR-08 | F-01, F-02, F-03, F-04, F-05, F-06, F-07, F-08 (Sprint 1 screens); F-09 to F-13 (Sprint 2 screens); F-18 (all) | 1 (built screens), 2 (built screens), 3 | E checks plus checklist; Sprint 2: AC-09.9, 09.10, 10.9, 10.10, 11.8, 12.7, 13.10 · E (inline validation, loading/empty/error states, 360 px) |
+| NFR-07 | F-18 | 3 | AC-18.1 / TEST-18.1 (F-18 1.0, planned): timing script `scripts/perf/nfr-07.mjs` over a 10,000-transaction ledger, plus a deployed spot check |
+| NFR-08 | F-01, F-02, F-03, F-04, F-05, F-06, F-07, F-08 (Sprint 1 screens); F-09 to F-13 (Sprint 2 screens); F-14 to F-17 (Sprint 3 screens); F-18 (all) | 1 (built screens), 2 (built screens), 3 | E checks plus checklist; Sprint 2: AC-09.9, 09.10, 10.9, 10.10, 11.8, 12.7, 13.10 · E (inline validation, loading/empty/error states, 360 px); Sprint 3 (planned): AC-14.9, 15.9, 16.8, 17.7 · E; all screens: AC-18.2–18.5 / TEST-18.2–18.5 (checklist in F-18 §2.2) · E, M |
 | NFR-09 | F-19 | 1 local, Lab 5 CI | Coverage gate in CI (`unit-api-tests` job); CI runs |
 | NFR-10 | F-01 | 1 | AC-01.6, AC-01.12, AC-01.13 / TEST-01.6, TEST-01.12, TEST-01.13 · A |
 
@@ -81,6 +81,7 @@ Baseline v1.0 contains 25 FR, 16 BR and 10 NFR. Every one is mapped to a feature
 | v2.2 | 27 Nov 2026 | F-11 1.1 (Sprint 2 README §6): TEST-11.8's Receive step corrected to receive into Bank Account from Wallet, so its expected balances (Bank 49,200.00, Wallet 800.00 THB) follow from SRS §4; 1.0's step moved the money the other way. §2.4 names the unit pair tables of TEST-05.13/TEST-06.11 and F-10 TEST-10.10's target-group list, which change with the matrix. Test specification only: no requirement, rule, AC or behaviour changes | Teammate review, PR for Issue #58 |
 | v2.3 | 27 Nov 2026 | F-13 1.1 and F-07 1.3 (Sprint 2 README §6, Sprint 1 README §5): history items and the transaction detail also return `createdAt`, and a void leaves `updatedAt` unchanged, so the "Edited" mark in F-13 §2.2 can be computed (`updatedAt` later than `createdAt`). Recorded before the F-13 tests. No requirement, AC or TEST added or dropped | Teammate review pending (F-13 PR, Issue #61) |
 | v2.4 | 27 Nov 2026 | F-12 1.1 (Sprint 2 README §6): removing an opening balance leaves `updated_at` unchanged, as a void does in f-13 1.1, so a removed opening balance that was never corrected is not marked "Edited"; a correction still changes it. TEST-12.3 asserts it. Recorded before the fix and its failing test. No requirement, AC or TEST added or dropped | Teammate review, F-13 PR #70 (changes requested) |
+| v2.5 | 27 Nov 2026 | Sprint 3 contracts F-14 1.0 to F-18 1.0 and Sprint 3 README 1.0, recorded before implementation (Deliverable 2 Part C). §1 maps every Sprint 3 AC to FR-04, 07, 18, 19, 20, 23, 24, BR-01, 02, 08, 12, 15 and NFR-02, 07, 08, all marked planned until executed. Contract revision: F-07 1.4 (`GET /transactions` accepts the F-14/F-15 filters and rejects unknown parameters; items gain `isFavorite`; F-15 §2.4 lists the two F-07 tests whose key list changes). New error code `EMAIL_EXISTS` (Sprint 3 README §2.5). plan.md §1: the 29 Nov checkpoint needs F-15 only, with F-14 after it (previously F-14 and F-15). No requirement added or dropped; no AC removed | Teammate review pending (Chawin) |
 
 All assumptions and decisions (A-01–A-04, D-01–D-07) are fully resolved and agreed by the team; zero open items remain.
 
