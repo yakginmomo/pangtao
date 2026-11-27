@@ -41,6 +41,7 @@ export interface LedgerEventInput {
   date: string; // YYYY-MM-DD
   total: number; // satang
   voided?: boolean;
+  isFavorite?: boolean;
   memo?: string;
   lines?: Array<{ targetAccountId: string; amount: number; note?: string }>;
 }
@@ -56,6 +57,7 @@ export async function insertTransaction(userId: string, event: LedgerEventInput)
         accountId: event.accountId,
         txnDate: new Date(`${event.date}T00:00:00.000Z`),
         totalAmount: BigInt(event.total),
+        isFavorite: event.isFavorite ?? false,
         voidedAt: event.voided ? new Date() : null,
         memo: event.memo ?? null,
       },
@@ -131,6 +133,91 @@ export async function insertDemoLedger(userId: string) {
     cardChargeTransactionId: cardCharge.id,
     repaymentTransactionId: repayment.id,
     voidedTransactionId: voided.id,
+  };
+}
+
+/**
+ * Sprint 3 README §6 shared fixture: six Alice transactions relative to today T (Bangkok) plus
+ * one Bob Payment so F-14, F-15 and F-16 tests share deterministic memos, notes and balances.
+ */
+export async function insertSearchLedger(aliceId: string, bobId?: string) {
+  const ids = await accountIdsByName(aliceId);
+
+  const opening = await insertTransaction(aliceId, {
+    kind: 'OPENING_BALANCE',
+    accountId: ids['Bank Account'],
+    date: bangkokDate(-30),
+    total: 5_000_000, // 50,000.00 THB
+  });
+  const salary = await insertTransaction(aliceId, {
+    kind: 'RECEIPT',
+    accountId: ids['Bank Account'],
+    date: bangkokDate(-20),
+    total: 3_000_000, // 30,000.00 THB
+    memo: 'November salary',
+    lines: [{ targetAccountId: ids['Salary'], amount: 3_000_000 }],
+  });
+  const cardCharge = await insertTransaction(aliceId, {
+    kind: 'PAYMENT',
+    accountId: ids['Credit Card'],
+    date: bangkokDate(-10),
+    total: 120_000, // 1,200.00 THB
+    memo: 'Weekend',
+    lines: [
+      { targetAccountId: ids['Dining'], amount: 70_000, note: 'Team lunch' }, // 700.00 THB
+      { targetAccountId: ids['Groceries'], amount: 50_000 }, // 500.00 THB
+    ],
+  });
+  const repayment = await insertTransaction(aliceId, {
+    kind: 'PAYMENT',
+    accountId: ids['Bank Account'],
+    date: bangkokDate(-5),
+    total: 80_000, // 800.00 THB
+    memo: 'Card bill',
+    lines: [{ targetAccountId: ids['Credit Card'], amount: 80_000 }],
+  });
+  const transfer = await insertTransaction(aliceId, {
+    kind: 'PAYMENT',
+    accountId: ids['Bank Account'],
+    date: bangkokDate(-2),
+    total: 1_000_000, // 10,000.00 THB
+    memo: 'Top up 100%',
+    lines: [{ targetAccountId: ids['Wallet'], amount: 1_000_000 }],
+  });
+  const voided = await insertTransaction(aliceId, {
+    kind: 'PAYMENT',
+    accountId: ids['Wallet'],
+    date: bangkokDate(-1),
+    total: 15_000, // 150.00 THB
+    memo: 'Coffee',
+    voided: true,
+    lines: [{ targetAccountId: ids['Dining'], amount: 15_000 }],
+  });
+
+  let bobIds: AccountIds | undefined;
+  let bobPaymentTransactionId: string | undefined;
+  if (bobId) {
+    bobIds = await accountIdsByName(bobId);
+    const bobPayment = await insertTransaction(bobId, {
+      kind: 'PAYMENT',
+      accountId: bobIds['Bank Account'],
+      date: bangkokDate(-3),
+      total: 70_000, // 700.00 THB
+      lines: [{ targetAccountId: bobIds['Dining'], amount: 70_000, note: 'Team lunch' }],
+    });
+    bobPaymentTransactionId = bobPayment.id;
+  }
+
+  return {
+    ids,
+    bobIds,
+    openingTransactionId: opening.id,
+    salaryTransactionId: salary.id,
+    cardChargeTransactionId: cardCharge.id,
+    repaymentTransactionId: repayment.id,
+    transferTransactionId: transfer.id,
+    voidedTransactionId: voided.id,
+    bobPaymentTransactionId,
   };
 }
 

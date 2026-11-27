@@ -55,9 +55,18 @@ export interface HistoryLineView extends AllocationLineView {
   targetAccountName: string;
 }
 
+/** f-15 §2.1 PATCH favorite response; `updatedAt` is unchanged (S3-D6). */
+export interface FavoriteTransactionView {
+  id: string;
+  isFavorite: boolean;
+  /** ISO 8601 timestamp. */
+  updatedAt: string;
+}
+
 /**
- * f-07 §2.1 (1.3): `{ id, kind, accountId, accountName, txnDate, totalAmount, memo, lines, voidedAt,
- * createdAt, updatedAt }`. `updatedAt` later than `createdAt` means the transaction was edited (f-13 1.1).
+ * f-07 §2.1 (1.3 / 1.4): `{ id, kind, accountId, accountName, txnDate, totalAmount, memo,
+ * isFavorite, lines, voidedAt, createdAt, updatedAt }`. `updatedAt` later than `createdAt`
+ * means the transaction was edited (f-13 1.1).
  */
 export interface TransactionHistoryView {
   id: string;
@@ -69,6 +78,7 @@ export interface TransactionHistoryView {
   /** Integer satang. */
   totalAmount: number;
   memo: string | null;
+  isFavorite: boolean;
   lines: HistoryLineView[];
   /** ISO 8601 timestamp, or null while the transaction counts. */
   voidedAt: string | null;
@@ -95,6 +105,7 @@ const HISTORY_SELECT = {
   txnDate: true,
   totalAmount: true,
   memo: true,
+  isFavorite: true,
   voidedAt: true,
   createdAt: true,
   updatedAt: true,
@@ -121,6 +132,7 @@ function toHistoryView(row: HistoryRow): TransactionHistoryView {
     txnDate: row.txnDate.toISOString().slice(0, 10),
     totalAmount: satangToJson(row.totalAmount),
     memo: row.memo,
+    isFavorite: row.isFavorite,
     lines: row.lines.map((line) => ({
       id: line.id,
       targetAccountId: line.targetAccountId,
@@ -370,6 +382,47 @@ export class TransactionService {
   }
 
   /**
+   * FR-19 / f-15 §1: mark or unmark a Payment or Receipt as favorite without changing `updated_at`
+   * (S3-D6). Opening balances are rejected (400). A voided row cannot be newly marked (409
+   * TRANSACTION_VOIDED, guarded conditionally on `voided_at IS NULL` against a concurrent void),
+   * while unmarking a voided favorite is allowed (Q-9).
+   */
+  async setFavorite(userId: string, id: string, isFavorite: boolean): Promise<FavoriteTransactionView> {
+    return prisma.$transaction(async (tx) => {
+      const saved = await tx.transaction.findFirst({
+        where: { id, userId },
+        select: { id: true, kind: true, voidedAt: true, updatedAt: true },
+      });
+      if (!saved) {
+        throw new AppError(404, 'NOT_FOUND', 'Transaction not found');
+      }
+      if (saved.kind === 'OPENING_BALANCE') {
+        throw new AppError(400, 'VALIDATION_ERROR', 'Opening balances cannot be favorites', [
+          { field: 'id', issue: 'opening balances cannot be favorites' },
+        ]);
+      }
+      if (isFavorite && saved.voidedAt !== null) {
+        throw transactionVoided();
+      }
+
+      const updated = await tx.transaction.updateMany({
+        where: isFavorite ? { id, userId, voidedAt: null } : { id, userId },
+        // Explicit `updatedAt` overrides Prisma's `@updatedAt` so toggling favorite is not an edit (S3-D6).
+        data: { isFavorite, updatedAt: saved.updatedAt },
+      });
+      if (updated.count === 0) {
+        throw transactionVoided();
+      }
+
+      return {
+        id,
+        isFavorite,
+        updatedAt: saved.updatedAt.toISOString(),
+      };
+    });
+  }
+
+  /**
    * FR-17 / BR-01: one page of the user's history, newest first (`txn_date DESC, created_at
    * DESC`, served by `transactions_user_id_txn_date_created_at_idx`), with `id DESC` as a final
    * tie-break so offset pages never repeat or skip rows that share a date and creation time.
@@ -377,7 +430,10 @@ export class TransactionService {
    * and page are read from one REPEATABLE READ snapshot so `total` matches the page.
    */
   async listTransactions(userId: string, query: ListTransactionsQueryDto): Promise<TransactionHistoryPage> {
-    const where = { userId } satisfies Prisma.TransactionWhereInput;
+    const where: Prisma.TransactionWhereInput = {
+      userId,
+      ...(query.favorite !== undefined ? { isFavorite: query.favorite } : {}),
+    };
     const [total, rows] = await prisma.$transaction(
       [
         prisma.transaction.count({ where }),

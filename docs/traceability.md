@@ -26,8 +26,8 @@ AC and test IDs follow the convention AC-NN.k and TEST-NN.k, where NN is the fea
 | FR-16 | F-13 | 2 | AC-13.1–13.10 / TEST-13.1–13.10 (F-13 1.1) · U, A, E |
 | FR-17 | F-07 | 1 | AC-07.x / TEST-07.x · A, E |
 | FR-18 | F-14 | 3 | AC-14.1–14.9 / TEST-14.1–14.9 (F-14 1.0, planned) · U, A, E |
-| FR-19 | F-15 | 3 | AC-15.1–15.5, 15.9 / TEST-15.1–15.5, 15.9 (F-15 1.0, planned) · A, E |
-| FR-20 | F-15 | 3 | AC-15.6–15.9 / TEST-15.6–15.9 (F-15 1.0, planned) · A, E |
+| FR-19 | F-15 | 3 | AC-15.1–15.5, 15.9 / TEST-15.1–15.5, 15.9 (F-15 1.0, implemented) · A, E |
+| FR-20 | F-15 | 3 | AC-15.6–15.9 / TEST-15.6–15.9 (F-15 1.0, implemented) · A, E |
 | FR-21 | F-10 | 2 | AC-10.8, 10.9 / TEST-10.8, 10.9 (F-10 1.0) · A, E |
 | FR-22 | F-08 | 1 | AC-08.x / TEST-08.x · U, A, E |
 | FR-23 | F-16 | 3 | AC-16.1–16.3, 16.5–16.8 / TEST-16.1–16.3, 16.5–16.8 (F-16 1.0, planned) · U, A, E |
@@ -47,7 +47,7 @@ AC and test IDs follow the convention AC-NN.k and TEST-NN.k, where NN is the fea
 | BR-12 | F-13; F-14, F-15, F-16 | 2, 3 | AC-13.5, 13.6 / TEST-13.5, 13.6, 13.10 (F-13 1.1) · A, E; until F-13 merges, F-07 history lists non-voided transactions only (f-07 1.2); Sprint 3 (planned): AC-14.6 (filtered history keeps voided rows), AC-15.4 (voided favorites), AC-16.2 (reports exclude voided) · A |
 | BR-13 | F-02 | 1 | AC-02.x · A |
 | BR-14 | F-04, F-05, F-06 (archived rule), F-09 (lifecycle), F-10 to F-13 | 1, 2 | AC-04.10 · A, E; AC-05.12 / TEST-05.12 · A (archived source); AC-05.13 · U, A (archived target, BR-06); AC-06.10 / TEST-06.10 · A (archived receiving account); Sprint 2: AC-09.2 (subtype valid for type), AC-09.3 (unique names), AC-09.5 (type and subtype fixed), AC-09.6, 09.7 (archive and unarchive), AC-10.6, 11.5 (archived loan or Cash target), AC-12.5 (archived account's opening balance), AC-13.3, 13.4 (edits: newly chosen archived account rejected, archived account kept in the same role) · U, A |
-| BR-15 | F-15 | 3 | AC-15.6–15.8 / TEST-15.6–15.8 (F-15 1.0, planned) · A, E |
+| BR-15 | F-15 | 3 | AC-15.6–15.8 / TEST-15.6–15.8 (F-15 1.0, implemented) · A, E |
 | BR-16 | F-05, F-06; F-10, F-13 | 1, 2 | AC-05.10, AC-06.4 / TEST-05.10, TEST-06.4 · A; Sprint 2: AC-10.6 (Loan Given source rejected), AC-13.3 (edit re-checks the source type) · U, A |
 | NFR-01 | F-01 | 1 | AC-01.x · A |
 | NFR-02 | F-01 (all routes) | 1, re-run in 2, 3 | AC-01.x · A route-list test; Sprint 2 routes added to it (F-09, F-10, F-12, F-13 DoD), anonymous 401 in AC-09.8, 10.8, 11.6, 12.6, 13.8 · A; Sprint 3 (planned): routes added by F-15, F-16, F-17 (DoD), anonymous 401 in AC-14.8, 15.5, 16.6, 17.5; full list on the release commit in AC-18.6 · A |
@@ -332,3 +332,27 @@ The f-12 §5 DoD checks are the untagged tests "two parallel removes of the same
 | AC-13.10 | TEST-13.10 | E | `tests/e2e/edit-void.spec.ts` | PASS locally; failing-first `972b5df` |
 
 **Status:** **accepted** (updated 27 Nov 2026, Issue #78). F-13 merged into `sprint-2-staging` by PR #70 (`a05a0fb`) and released to `main` in PR #71 (`0d66ae2`, tag `v0.2.0`), deployed as `pangtao-00011-28l`. The deploy run [45890385872](https://github.com/yakginmomo/pangtao/actions/runs/45890385872) on `0d66ae2` passed: 198 unit and API tests and 32 E2E tests, 0 failed, 0 skipped. **Accepted** on 27 Nov 2026: the Sprint 2 journey post-deploy checks PD2-8 to PD2-16 passed on `pangtao-00011-28l` (re-runs and deviations in the [release record](sprints/sprint-2/release-v0.2.0.md) §2.2–§2.3). Earlier status text is in git history.
+
+## 5. Sprint 3 verification results
+
+### F-15 Favorites and duplicate (contract 1.0, Issue #73)
+
+**Tested version:** branch `feature/F-15-favorites-duplicate` from `sprint-3-staging` (`e007832`). Failing-test commit `1764d74`; backend implementation commit `84d41bd`; frontend implementation commit `fee71b1`. `npm run verify` on `fee71b1`: lint and both type-checks clean, 204 unit and API tests passed, 0 failed, 0 skipped (24 files), service-layer line coverage 98.54%, build succeeded, 35 E2E tests passed, 0 failed, 0 skipped. CI runs on the PR.
+
+**Failing-first.** At `1764d74`, on the pre-change code, all six API tests in `tests/api/favorites.api.test.ts` failed (`TEST-15.1`, `15.2`, `15.4`, `15.5`, `15.7` received 404 from the missing `PATCH /api/v1/transactions/:id/favorite` route; `TEST-15.3` received 200 instead of 400 on `GET /transactions?favorite=yes`), and `TEST-01.7` in `tests/api/auth.api.test.ts` failed because `PATCH /api/v1/transactions/:id/favorite` was not declared.
+
+**Existing tests changed with the history query (f-07 1.4, f-15 §2.4).** In `84d41bd`: `ITEM_KEYS` in `tests/api/transaction-history.api.test.ts` gains `isFavorite`, and `TEST-07.1` and `TEST-07.3` assert `isFavorite: false` on the demo ledger. No other F-07, F-05 or F-06 test changed.
+
+| AC | TEST | Level | Test file | Result |
+|---|---|---|---|---|
+| AC-15.1 | TEST-15.1 | A | `tests/api/favorites.api.test.ts` | PASS; failing-first `1764d74` |
+| AC-15.2 | TEST-15.2 | A | `tests/api/favorites.api.test.ts` | PASS; failing-first `1764d74` |
+| AC-15.3 | TEST-15.3 | A | `tests/api/favorites.api.test.ts` | PASS; failing-first `1764d74` |
+| AC-15.4 | TEST-15.4 | A | `tests/api/favorites.api.test.ts` | PASS; failing-first `1764d74` |
+| AC-15.5 | TEST-15.5; NFR-02 route list in TEST-01.7 | A | `tests/api/favorites.api.test.ts`, `tests/api/auth.api.test.ts` | PASS; failing-first `1764d74` |
+| AC-15.6 | TEST-15.6 | E | `tests/e2e/favorites-duplicate.spec.ts` | PASS locally |
+| AC-15.7 | TEST-15.7 | A, E | `tests/api/favorites.api.test.ts`, `tests/e2e/favorites-duplicate.spec.ts` | PASS; API failing-first `1764d74` |
+| AC-15.8 | TEST-15.8 | E | `tests/e2e/favorites-duplicate.spec.ts` | PASS locally |
+| AC-15.9 | TEST-15.9 | E | `tests/e2e/favorites-duplicate.spec.ts` | PASS locally |
+
+**Status:** at the time of writing, F-15 is implemented on `feature/F-15-favorites-duplicate` and all nine ACs pass locally. It is not yet reviewed, merged into `sprint-3-staging` or released. The statuses and the tested commit are updated when it merges.

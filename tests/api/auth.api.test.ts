@@ -203,6 +203,8 @@ describe('F-01 Authentication and Authorization Foundation (STS)', () => {
         // F-13 (Sprint 2): edit and void are User-only.
         { method: 'PATCH', path: '/api/v1/transactions/:id', access: 'USER' },
         { method: 'POST', path: '/api/v1/transactions/:id/void', access: 'USER' },
+        // F-15 (Sprint 3): favorites toggle is User-only.
+        { method: 'PATCH', path: '/api/v1/transactions/:id/favorite', access: 'USER' },
       ])
     );
 

@@ -90,18 +90,19 @@ Income and expense summaries read only lines whose target account type is Income
 |---|---|---|---|
 | Login | /login | Anonymous | Email and password sign-in |
 | Dashboard | / | User | Balances grouped by account type; current-month income and expense; per account, set an opening balance (F-04) or edit or remove it (F-12) |
-| Transactions | /transactions | User | Paginated history (filters arrive in Sprint 3); a voided transaction keeps its place with a Voided badge and a struck-through total (F-13) |
-| Transaction detail | /transactions/:id | User | One transaction with its allocation lines; Edit and Void for an active Payment or Receipt, "Voided on" and "Edited" marks, and a pointer to the Dashboard for an opening balance (F-13) |
+| Transactions | /transactions | User | Paginated history with Favorite toggles and Duplicate actions (F-15); filters arrive in F-14; a voided transaction keeps its place with a Voided badge and a struck-through total (F-13) |
+| Transaction detail | /transactions/:id | User | One transaction with its allocation lines; Favorite toggle and Duplicate (F-15); Edit and Void for an active Payment or Receipt, "Voided on" and "Edited" marks, and a pointer to the Dashboard for an opening balance (F-13) |
 | Edit transaction | /transactions/:id/edit | User | The New transaction form pre-filled, with the kind fixed; Save waits for a change (F-13) |
-| New transaction | /transactions/new | User | Pay and Receive tabs with an allocation-lines editor; `?tab=payment\|receive` opens a tab, and target groups name each line's meaning (for example Lend, Borrow, Loan repayment; F-10; Transfer to and Transfer from another Cash account; F-11) |
+| New transaction | /transactions/new | User | Pay and Receive tabs with an allocation-lines editor; `?tab=payment\|receive` opens a tab, `?duplicateOf=:id` pre-fills a new copy with today's date (F-15), and target groups name each line's meaning (for example Lend, Borrow, Loan repayment; F-10; Transfer to and Transfer from another Cash account; F-11) |
+| Favorites | /favorites | User | Paginated list of favorite transactions, newest first, with Remove from favorites and Duplicate (F-15) |
 | Summary | /summary | User | Income, expense and net for a date range |
 | Accounts | /accounts | User | Create, rename, archive and unarchive accounts (F-09) |
 | Loans | /loans | User | Owed to me and I owe, with balances and totals, including card debt; Lend, Borrow and repayment shortcuts (F-10) |
 | Users | /admin/users | Administrator | List users; enable or disable |
 
-Sprint 2 adds the Accounts (F-09) and Loans (F-10) screens to the navigation; Sprint 3 adds Favorites and Reports screens in the same way.
+Sprint 2 adds the Accounts (F-09) and Loans (F-10) screens to the navigation; Sprint 3 adds Favorites (F-15) and Reports (F-16) screens in the same way.
 
-**Navigation.** A top bar shows the brand, a role-based menu (User: Dashboard, Accounts, History, Summary, Loans; Administrator: Users), the current user’s name and Log out. A route guard sends unauthenticated visitors to /login and shows a Not permitted page for the wrong role. After login, a User lands on the Dashboard and an Administrator on Users.
+**Navigation.** A top bar shows the brand, a role-based menu (User: Dashboard, Accounts, History, Favorites, Summary, Loans; Administrator: Users), the current user’s name and Log out. A route guard sends unauthenticated visitors to /login and shows a Not permitted page for the wrong role. After login, a User lands on the Dashboard and an Administrator on Users.
 
 **Shared behavior.**
 
@@ -135,8 +136,9 @@ Sprint 2 adds the Accounts (F-09) and Loans (F-10) screens to the navigation; Sp
 | POST /transactions | User | Create Payment or Receipt with lines; a line to another Cash account is a transfer (F-11) |
 | PATCH /transactions/:id | User | Replace a Payment or Receipt with its full new version; the kind is fixed (F-13) |
 | POST /transactions/:id/void | User | Void a Payment or Receipt; it stays in history (F-13) |
-| GET /transactions | User | History, voided transactions included and marked (F-13) |
-| GET /transactions/:id | User | One transaction with lines, voided or not |
+| PATCH /transactions/:id/favorite | User | Mark or unmark a Payment or Receipt as favorite without changing `updated_at` (F-15) |
+| GET /transactions | User | History, voided transactions included and marked (F-13); optional `favorite=true\|false` filter, strict query parameters, and `isFavorite` on items (F-15) |
+| GET /transactions/:id | User | One transaction with lines, voided or not, including `isFavorite` (F-15) |
 | GET /summary/income-expense?from&to | User | Income, expense, net |
 | GET /loans | User | Outstanding Loan Given and Loan Taken balances with totals, including card debt (F-10) |
 | GET /admin/users | Administrator | List users |
@@ -155,6 +157,7 @@ Feature contracts give full request, response and error shapes.
 | Record, correct or remove an opening balance | 401 | Allow | 403 | Own accounts only; another user's account returns 404 |
 | Create or view transactions and history | 401 | Allow | 403 | Own records only; others return 404 |
 | Edit or void a transaction | 401 | Allow | 403 | Own Payments and Receipts only; others return 404 (F-13) |
+| Mark or unmark a transaction as favorite | 401 | Allow | 403 | Own Payments and Receipts only; others return 404 (F-15) |
 | View income and expense summary | 401 | Allow | 403 | Own data only |
 | View outstanding loans | 401 | Allow | 403 | Own accounts only |
 | List users | 401 | 403 | Allow | All users, non-financial fields only |

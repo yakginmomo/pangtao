@@ -45,7 +45,29 @@ export const UpdateTransactionBodySchema = TransactionFieldsSchema.strict();
 
 export type UpdateTransactionBodyDto = z.infer<typeof UpdateTransactionBodySchema>;
 
-/** GET /api/v1/transactions?limit&offset (f-07 §1): limit 1–100 (default 50), offset ≥ 0. */
-export const ListTransactionsQuerySchema = PaginationQuerySchema;
+/**
+ * GET /api/v1/transactions?limit&offset&favorite (f-07 1.4, f-15 §2.1): limit 1–100 (default 50),
+ * offset ≥ 0, optional favorite (`true` or `false`); unknown, repeated or empty params are 400.
+ */
+export const ListTransactionsQuerySchema = PaginationQuerySchema.extend({
+  favorite: z
+    .enum(['true', 'false'], {
+      message: 'favorite must be true or false',
+    })
+    .transform((value) => value === 'true')
+    .optional(),
+}).strict();
 
 export type ListTransactionsQueryDto = z.infer<typeof ListTransactionsQuerySchema>;
+
+/** PATCH /api/v1/transactions/:id/favorite (f-15 §2.1): strictly `{ isFavorite: boolean }`. */
+export const UpdateFavoriteBodySchema = z
+  .object({
+    isFavorite: z.boolean({
+      required_error: 'isFavorite is required',
+      invalid_type_error: 'isFavorite must be a boolean',
+    }),
+  })
+  .strict();
+
+export type UpdateFavoriteBodyDto = z.infer<typeof UpdateFavoriteBodySchema>;

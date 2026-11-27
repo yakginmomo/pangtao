@@ -4,13 +4,10 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { AppShell } from '../components/AppShell';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { Icon } from '../components/Icon';
-import { TransactionKindBadge, VoidedBadge } from '../components/TransactionKindBadge';
+import { TransactionHistoryRow } from '../components/TransactionHistoryRow';
 import { useAuth } from '../context/AuthContext';
 import { fetchTransactions, transactionsQueryKey } from '../api/transactions.api';
 import { errorCode, errorMessage } from '../api/http';
-import { HistoryTransaction } from '../types/transaction.types';
-import { formatSatang } from '../utils/money';
-import { formatCalendarDate } from '../utils/date';
 import { colors, font, radius, space } from '../styles/theme';
 
 /** f-07 §1: default page size 50, server maximum 100. */
@@ -29,17 +26,6 @@ const skeletonBar: React.CSSProperties = {
   backgroundColor: '#E8E2D6',
 };
 
-const linkButton: React.CSSProperties = {
-  padding: 0,
-  border: 'none',
-  background: 'none',
-  color: colors.cobalt,
-  fontSize: font.size.xs,
-  fontWeight: font.weight.medium,
-  textDecoration: 'underline',
-  cursor: 'pointer',
-};
-
 const pagerButton: React.CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
@@ -51,103 +37,6 @@ const pagerButton: React.CSSProperties = {
   color: colors.cobalt,
   fontWeight: font.weight.medium,
   cursor: 'pointer',
-};
-
-const HistoryRow: React.FC<{ transaction: HistoryTransaction; first: boolean }> = ({ transaction, first }) => {
-  const [expanded, setExpanded] = useState(false);
-  const linesId = `history-lines-${transaction.id}`;
-  const lineCount = transaction.lines.length;
-  // f-13 §2.2: a voided row keeps its place, marked and with its amounts struck through.
-  const voided = transaction.voidedAt !== null;
-  const struck: React.CSSProperties = voided ? { textDecoration: 'line-through', color: colors.textMuted } : {};
-
-  return (
-    <li
-      data-testid="history-row"
-      style={{ padding: `${space[3]} 0`, borderTop: first ? 'none' : `1px solid ${colors.border}` }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: space[3], flexWrap: 'wrap' }}>
-        <div style={{ minWidth: 0, flex: '1 1 14rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: space[2], flexWrap: 'wrap' }}>
-            <span style={{ fontSize: font.size.sm, color: colors.textMuted, whiteSpace: 'nowrap' }}>
-              {formatCalendarDate(transaction.txnDate)}
-            </span>
-            <TransactionKindBadge kind={transaction.kind} />
-            {voided && <VoidedBadge testId="history-voided" />}
-          </div>
-          <Link
-            to={`/transactions/${transaction.id}`}
-            data-testid="history-open"
-            style={{
-              display: 'block',
-              marginTop: space[1],
-              fontSize: font.size.base,
-              fontWeight: font.weight.medium,
-              color: colors.textPrimary,
-              textDecoration: 'none',
-              overflowWrap: 'anywhere',
-            }}
-          >
-            {transaction.accountName}
-          </Link>
-          {transaction.memo && (
-            <span style={{ display: 'block', fontSize: font.size.sm, color: colors.textSecondary, overflowWrap: 'anywhere' }}>
-              {transaction.memo}
-            </span>
-          )}
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: space[1] }}>
-          <span
-            data-testid="history-total"
-            style={{ fontSize: font.size.base, fontWeight: font.weight.bold, color: colors.textPrimary, fontVariantNumeric: 'tabular-nums', ...struck }}
-          >
-            {formatSatang(transaction.totalAmount)}
-          </span>
-          {lineCount > 0 && (
-            <button
-              type="button"
-              data-testid="history-expand"
-              aria-expanded={expanded}
-              aria-controls={linesId}
-              onClick={() => setExpanded((value) => !value)}
-              style={linkButton}
-            >
-              {expanded ? 'Hide lines' : `Show ${lineCount} ${lineCount === 1 ? 'line' : 'lines'}`}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {expanded && (
-        <ul
-          id={linesId}
-          style={{
-            listStyle: 'none',
-            margin: `${space[2]} 0 0`,
-            padding: `${space[2]} ${space[3]}`,
-            borderRadius: radius.md,
-            backgroundColor: colors.porcelain,
-          }}
-        >
-          {transaction.lines.map((line) => (
-            <li
-              key={line.id}
-              data-testid="history-line"
-              style={{ display: 'flex', justifyContent: 'space-between', gap: space[3], flexWrap: 'wrap', padding: `${space[1]} 0` }}
-            >
-              <span style={{ minWidth: 0, fontSize: font.size.sm, color: colors.textPrimary, overflowWrap: 'anywhere' }}>
-                {line.targetAccountName}
-                {line.note && <span style={{ color: colors.textMuted }}> · {line.note}</span>}
-              </span>
-              <span style={{ fontSize: font.size.sm, fontWeight: font.weight.semibold, fontVariantNumeric: 'tabular-nums', ...struck }}>
-                {formatSatang(line.amount)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </li>
-  );
 };
 
 const HistorySkeleton: React.FC = () => (
@@ -174,6 +63,7 @@ export const TransactionHistoryPage: React.FC = () => {
   const { refetchUser } = useAuth();
   const [limit, setLimit] = useState<number>(DEFAULT_PAGE_SIZE);
   const [offset, setOffset] = useState(0);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const historyQuery = useQuery({
     queryKey: [...transactionsQueryKey, { limit, offset }],
@@ -211,6 +101,12 @@ export const TransactionHistoryPage: React.FC = () => {
           </Link>
         </div>
 
+        {notice && (
+          <div role="status" data-testid="history-notice" className="pt-error-banner">
+            {notice}
+          </div>
+        )}
+
         {historyQuery.isError && !historyQuery.isFetching && (
           <ErrorBanner
             message={errorMessage(historyQuery.error, 'Unable to load your transactions. Please try again.')}
@@ -233,7 +129,12 @@ export const TransactionHistoryPage: React.FC = () => {
           ) : page ? (
             <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
               {page.items.map((transaction, index) => (
-                <HistoryRow key={transaction.id} transaction={transaction} first={index === 0} />
+                <TransactionHistoryRow
+                  key={transaction.id}
+                  transaction={transaction}
+                  first={index === 0}
+                  onNotice={setNotice}
+                />
               ))}
             </ul>
           ) : null}
