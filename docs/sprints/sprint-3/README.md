@@ -173,7 +173,7 @@ Dates more than 90 days old are inserted through Prisma, as TEST-13.4 does, beca
 
 ## 7. Remaining work (Part C)
 
-Status at **27 November 2026**, base `main` at `0d66ae2`. Updated at every merge and release; previous states stay in git history.
+Status at **27 November 2026**, base `sprint-3-staging` at `2c8bd62` (F-15 and the Sprint 2 release record merged) and `main` at `0d66ae2` (`v0.2.0`). Updated at every merge and release; previous states stay in git history.
 
 ### 7.1 Status vocabulary
 
@@ -191,13 +191,13 @@ A feature is reported at the lowest status any of its ACs has reached; an unexec
 
 | Feature or defect | Current status | Remaining action | Owner and target |
 |---|---|---|---|
-| **F-15** Favorites and duplicate (#73) | implemented (9 of 9 ACs pass locally on `feature/F-15-favorites-duplicate`; RED `1764d74`, GREEN `84d41bd`/`fee71b1`; not yet merged) | PR review by Supichaya; merge to `sprint-3-staging`; release `v0.3.0` | Chawin (review: Supichaya) · in the checkpoint candidate by 29 Nov |
-| **F-14** Search and filter | planned (contract 1.0 in review); 0 of 9 ACs; no tested commit | Issue; RED tests for AC-14.1–14.9; strict query schema, filter SQL, filter panel with URL state; merge after F-15 | Chawin · before 13 Dec (checkpoint candidate if tested in time) |
-| **F-17** Administrator creates a user | planned (contract 1.0 in review); 0 of 7 ACs | Issue; RED tests; `POST /admin/users`, `EMAIL_EXISTS`, Create user dialog; merge | Supichaya · before 13 Dec |
-| **F-16** Category summary and monthly report | planned (contract 1.0 in review); 0 of 8 ACs | Issue; RED tests incl. the share-rounding unit test; two summary endpoints; Reports screen; merge | Chawin · before 13 Dec |
-| **F-18** Product hardening | planned (contract 1.0 in review); 0 of 6 ACs | Timing script and performance ledger; NFR-08 checklist and E2E sweep; failure-handling checks; defects fixed failing-first; regression on the release commit | Chawin (NFR-07), Supichaya (NFR-08, failure handling) · before 13 Dec |
-| Sprint 2 release record | F-09 to F-13 merged to `main` (`0d66ae2`, PR #71); tag `v0.2.0` not present in the repository at the time of writing | Tag the release commit, record the deployed revision and post-deploy checks of Sprint 2 README §3; update the traceability §4 status lines for F-12 and F-13, which still say "not yet merged" | Chawin · by 29 Nov |
-| L7-01 date picker window | Fixed (`90433ca` RED, `ba75d86` GREEN), merged in PR #65 and released with Sprint 2 | Close Issue #62 after the Sprint 2 post-deploy check; move the Lab 7 readiness entry to closed | Chawin · by 29 Nov |
+| **F-15** Favorites and duplicate (#73) | **tested**: 9 of 9 ACs pass; merged into `sprint-3-staging` by PR #81 (`49018bc`); CI run [45937132716](https://github.com/yakginmomo/pangtao/actions/runs/45937132716) on the PR head `899b995` (same tree as `49018bc`): 204 unit and API tests, 35 E2E, 0 failed, 0 skipped; RED `1764d74`, GREEN `84d41bd`/`fee71b1` | Release `v0.3.0` to `main`; post-deploy checks of Sprint 3 journey steps 2, 5 and 6; then accepted | Chawin (review: Supichaya) · in the checkpoint candidate by 29 Nov |
+| **F-14** Search and filter (#74) | planned (contract 1.0 merged, PR #72); 0 of 9 ACs; no tested commit | Issue; RED tests for AC-14.1–14.9; strict query schema, filter SQL, filter panel with URL state; merge after F-15 | Chawin · before 13 Dec (checkpoint candidate if tested in time) |
+| **F-17** Administrator creates a user (#75) | planned (contract 1.0 merged, PR #72); 0 of 7 ACs | Issue; RED tests; `POST /admin/users`, `EMAIL_EXISTS`, Create user dialog; merge | Supichaya · before 13 Dec |
+| **F-16** Category summary and monthly report (#76) | planned (contract 1.0 merged, PR #72); 0 of 8 ACs | Issue; RED tests incl. the share-rounding unit test; two summary endpoints; Reports screen; merge | Chawin · before 13 Dec |
+| **F-18** Product hardening (#77) | planned (contract 1.0 merged, PR #72); 0 of 6 ACs | Timing script and performance ledger; NFR-08 checklist and E2E sweep; failure-handling checks; defects fixed failing-first; regression on the release commit | Chawin (NFR-07), Supichaya (NFR-08, failure handling) · before 13 Dec |
+| Sprint 2 release record (#78) | **accepted**: tag `v0.2.0` on `0d66ae2` (PR #71), revision `pangtao-00011-28l`, Sprint 2 journey PD2-1 to PD2-16 passed on 27 Nov; F-09 to F-13 accepted; Issues #57 to #61 closed. Record and evidence: [release-v0.2.0.md](../sprint-2/release-v0.2.0.md), merged in PR #82 (`2c8bd62`) | Close #78 | Supichaya (review: Chawin) · by 29 Nov |
+| L7-01 date picker window (#62) | **closed**: fixed (`90433ca` RED, `ba75d86` GREEN, PR #65), released in `v0.2.0`, Issue #62 closed after the Sprint 2 post-deploy checks | None (Lab 7 readiness entry updated in PR #82) | — |
 | Final release and course deliverables | planned | `v1.0.0` release PR, deploy and post-deploy checks of §3; UAT re-test; final report and video | Both · before 13 Dec |
 
 ---
