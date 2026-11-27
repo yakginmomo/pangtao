@@ -1,6 +1,6 @@
 # F-07 Transaction History: Engineering Contract
 
-Requirements: FR-17, FR-25; BR-01 · Depends on: F-05, F-06 · Contract version: 1.3 (see [version history](README.md#5-contract-version-history)) · Suggested branch: `feature/F-07-transaction-history`
+Requirements: FR-17, FR-25; BR-01 · Depends on: F-05, F-06 · Contract version: 1.4 (see [version history](README.md#5-contract-version-history)) · Suggested branch: `feature/F-07-transaction-history`
 
 Shared conventions, error codes and the Product Definition of Done are in [README.md](README.md).
 
@@ -24,6 +24,7 @@ Shared conventions, error codes and the Product Definition of Done are in [READM
 - **Pagination**: Default limit is 50, maximum limit is 100. Offset must be $\ge 0$. Exceeding limit returns `400 VALIDATION_ERROR`.
 - **Chronological Ordering**: Transactions are ordered primarily by `txn_date DESC`, and secondarily by `created_at DESC`.
 - **Voided transactions (BR-12)**: History lists non-voided transactions only in Sprint 1, because nothing can void a transaction until F-13 (Edit and void, Sprint 2). (v1.2) From F-13, the list and the detail also return voided transactions, which keep their place in the order, count in `total`, and carry `voidedAt` (an ISO timestamp, `null` when active), `updatedAt` and (v1.3) `createdAt`; the UI marks them as voided (F-13 §2). AC-07.x are unchanged. Because the demo ledger contains a voided Payment, TEST-07.1, TEST-07.2, TEST-07.3 and three untagged history tests change their expected values in the F-13 commit that changes the query, as listed in [F-13 §2.4](../sprint-2/f-13-edit-void.md#24-sprint-1-tests-revised-by-this-feature-f-07-12-13); F-13 TEST-13.5 and TEST-13.10 verify the voided rows.
+- **Filters and favorites (v1.4)**: from F-15 the list accepts `favorite`, and from F-14 the filters `from`, `to`, `accountId`, `categoryId`, `q`, `minAmount` and `maxAmount`, as specified in [F-15](../sprint-3/f-15-favorites-duplicate.md) and [F-14](../sprint-3/f-14-search-filter.md); an unknown, repeated or empty parameter returns `400 VALIDATION_ERROR`. With no filter the behaviour above is unchanged. Items and the detail also carry `isFavorite`; TEST-07.1 and TEST-07.3 gain that key as listed in F-15 §2.4. AC-07.x are unchanged.
 - Amounts in the API are integer satang; UI renders formatted Thai Baht.
 
 **Permissions:** User only. Administrator receives 403, anonymous receives 401.

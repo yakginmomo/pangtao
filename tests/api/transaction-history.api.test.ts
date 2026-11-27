@@ -30,12 +30,13 @@ interface HistoryItem {
   txnDate: string;
   totalAmount: number;
   memo: string | null;
+  isFavorite: boolean;
   lines: HistoryLine[];
   voidedAt: string | null;
 }
 
-// f-07 1.2 / 1.3 (F-13): items also carry voidedAt, createdAt and updatedAt.
-const ITEM_KEYS = ['accountId', 'accountName', 'createdAt', 'id', 'kind', 'lines', 'memo', 'totalAmount', 'txnDate', 'updatedAt', 'voidedAt'];
+// f-07 1.2 / 1.3 (F-13) / 1.4 (F-15): items carry voidedAt, createdAt, updatedAt and isFavorite.
+const ITEM_KEYS = ['accountId', 'accountName', 'createdAt', 'id', 'isFavorite', 'kind', 'lines', 'memo', 'totalAmount', 'txnDate', 'updatedAt', 'voidedAt'];
 const LINE_KEYS = ['amount', 'id', 'note', 'targetAccountId', 'targetAccountName'];
 
 describe('F-07 Transaction History (STS)', () => {
@@ -78,6 +79,7 @@ describe('F-07 Transaction History (STS)', () => {
 
     for (const item of items) {
       expect(Object.keys(item).sort()).toEqual(ITEM_KEYS);
+      expect(item.isFavorite).toBe(false);
       for (const line of item.lines) {
         expect(Object.keys(line).sort()).toEqual(LINE_KEYS);
       }
@@ -152,6 +154,7 @@ describe('F-07 Transaction History (STS)', () => {
       txnDate: '2026-01-26',
       totalAmount: 120_000, // 1,200.00 THB
       memo: 'Dinner and groceries',
+      isFavorite: false,
       voidedAt: null,
     });
     expect(txn.lines.map((l) => [l.targetAccountName, l.amount, l.note])).toEqual([

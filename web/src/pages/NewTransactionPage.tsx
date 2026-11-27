@@ -6,14 +6,14 @@ import { ErrorBanner } from '../components/ErrorBanner';
 import { Icon } from '../components/Icon';
 import { useAuth } from '../context/AuthContext';
 import { accountsQueryKey, fetchAccounts } from '../api/accounts.api';
-import { createTransaction, updateTransaction } from '../api/transactions.api';
+import { createTransaction, fetchTransaction, transactionsQueryKey, updateTransaction } from '../api/transactions.api';
 import { invalidateLedgerQueries } from '../api/ledger-cache';
 import { errorCode, errorMessage } from '../api/http';
 import { Account, AccountType } from '../types/account.types';
 import { ApiErrorResponse } from '../types/auth.types';
 import { CreateTransactionInput, HistoryTransaction } from '../types/transaction.types';
 import { formatSatang, parseThbToSatang } from '../utils/money';
-import { addCalendarDays, BACKDATE_LIMIT_DAYS, isBeforeBackdateLimit, isFutureDate } from '../utils/date';
+import { addCalendarDays, BACKDATE_LIMIT_DAYS, formatCalendarDate, isBeforeBackdateLimit, isFutureDate } from '../utils/date';
 import { useBangkokToday } from '../hooks/useBangkokToday';
 import { colors, font, radius, space } from '../styles/theme';
 
@@ -162,33 +162,96 @@ export const FormSkeleton: React.FC = () => (
   </div>
 );
 
-/** f-05 §2.2 / f-06 §2.2: the Payment and Receive tabs of `/transactions/new`. */
-export const NewTransactionPage: React.FC = () => <TransactionForm />;
+/** f-05 §2.2 / f-06 §2.2 / f-15 §2.2: `/transactions/new` and `/transactions/new?duplicateOf=:id`. */
+export const NewTransactionPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const duplicateOf = searchParams.get('duplicateOf');
+  const { refetchUser } = useAuth();
+
+  const duplicateQuery = useQuery({
+    queryKey: [...transactionsQueryKey, 'detail', duplicateOf],
+    queryFn: () => fetchTransaction(duplicateOf!),
+    enabled: duplicateOf !== null && duplicateOf !== '',
+  });
+
+  const dupCode = errorCode(duplicateQuery.error);
+  useEffect(() => {
+    if (dupCode === 'UNAUTHENTICATED') void refetchUser();
+  }, [dupCode, refetchUser]);
+
+  if (!duplicateOf) {
+    return <TransactionForm />;
+  }
+
+  if (dupCode === 'NOT_FOUND' || dupCode === 'VALIDATION_ERROR') {
+    return <TransactionForm key="dup-not-found" duplicateNotice="Transaction not found." />;
+  }
+
+  if (duplicateQuery.isError && !duplicateQuery.data) {
+    return (
+      <AppShell>
+        <ErrorBanner
+          message={errorMessage(duplicateQuery.error, 'Unable to load the transaction to duplicate. Please try again.')}
+          onRetry={() => void duplicateQuery.refetch()}
+        />
+      </AppShell>
+    );
+  }
+
+  if (!duplicateQuery.data) {
+    return (
+      <AppShell>
+        <div style={{ maxWidth: '760px', margin: '0 auto' }}>
+          <FormSkeleton />
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (duplicateQuery.data.kind === 'OPENING_BALANCE') {
+    return <TransactionForm key={`dup-opening-${duplicateQuery.data.id}`} duplicateNotice="Opening balances cannot be duplicated." />;
+  }
+
+  return (
+    <TransactionForm
+      key={`dup-${duplicateQuery.data.id}-${duplicateQuery.data.updatedAt}`}
+      duplicate={duplicateQuery.data}
+    />
+  );
+};
 
 /**
- * The Payment / Receive form. With `existing` it is the f-13 §2.2 edit form: pre-filled, kind
- * fixed, the saved archived accounts kept in their roles and an unchanged old date accepted
- * (S2-D6), and Save enabled only once the version differs from the saved one.
+ * The Payment / Receive form.
+ * - With `existing` (f-13 §2.2): edit mode — kind fixed, saved archived accounts allowed in
+ *   their saved role and unchanged old date accepted (S2-D6), Save waits for a change.
+ * - With `duplicate` (f-15 §2.2): duplicate mode — kind/tab switchable, date defaults to today,
+ *   archived accounts flagged and block Save until replaced, Save creates a new transaction.
  */
-export const TransactionForm: React.FC<{ existing?: HistoryTransaction }> = ({ existing }) => {
+export const TransactionForm: React.FC<{
+  existing?: HistoryTransaction;
+  duplicate?: HistoryTransaction;
+  duplicateNotice?: string;
+}> = ({ existing, duplicate, duplicateNotice }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { refetchUser } = useAuth();
   const accountsQuery = useQuery({ queryKey: accountsQueryKey, queryFn: fetchAccounts });
 
+  const initial = existing ?? duplicate;
   // f-10 §2.2: the Loans page opens the form on a tab with ?tab=payment|receive.
   const [searchParams] = useSearchParams();
   const [mode, setMode] = useState<Mode>(() =>
-    existing ? (existing.kind === 'RECEIPT' ? 'RECEIPT' : 'PAYMENT') : searchParams.get('tab') === 'receive' ? 'RECEIPT' : 'PAYMENT'
+    initial ? (initial.kind === 'RECEIPT' ? 'RECEIPT' : 'PAYMENT') : searchParams.get('tab') === 'receive' ? 'RECEIPT' : 'PAYMENT'
   );
-  const [sourceId, setSourceId] = useState(existing?.accountId ?? '');
+  const [sourceId, setSourceId] = useState(initial?.accountId ?? '');
   // null until the user picks a date: the default then follows today, even across midnight (L7-01).
+  // In duplicate mode, date always starts as today (f-15 Q-10).
   const [typedDate, setTypedDate] = useState<string | null>(existing?.txnDate ?? null);
-  const [memo, setMemo] = useState(existing?.memo ?? '');
-  const [total, setTotal] = useState(existing ? satangToInput(existing.totalAmount) : '');
+  const [memo, setMemo] = useState(initial?.memo ?? '');
+  const [total, setTotal] = useState(initial ? satangToInput(initial.totalAmount) : '');
   const [lines, setLines] = useState<LineDraft[]>(() =>
-    existing && existing.lines.length > 0
-      ? existing.lines.map((line) => ({
+    initial && initial.lines.length > 0
+      ? initial.lines.map((line) => ({
           key: ++lineKeySeq,
           targetAccountId: line.targetAccountId,
           amount: satangToInput(line.amount),
@@ -214,9 +277,9 @@ export const TransactionForm: React.FC<{ existing?: HistoryTransaction }> = ({ e
   const mutation = useMutation({
     mutationFn: ({ kind, ...version }: CreateTransactionInput) =>
       existing ? updateTransaction(existing.id, version) : createTransaction({ kind, ...version }),
-    onSuccess: async () => {
+    onSuccess: async (saved) => {
       await invalidateLedgerQueries(queryClient);
-      navigate(existing ? `/transactions/${existing.id}` : '/');
+      navigate(existing ? `/transactions/${existing.id}` : duplicate ? `/transactions/${saved.id}` : '/');
     },
     onError: async (error) => {
       const code = errorCode(error);
@@ -241,16 +304,22 @@ export const TransactionForm: React.FC<{ existing?: HistoryTransaction }> = ({ e
   });
 
   const accounts: Account[] = accountsQuery.data ?? [];
-  // S2-D6: an account archived since it was saved stays available, but only in its saved role.
-  const savedTargetIds = new Set(existing?.lines.map((line) => line.targetAccountId) ?? []);
+  // S2-D6 (edit) / f-15 §1 (duplicate): include the original's accounts even if archived, so edit
+  // can keep them and duplicate can show & flag them until replaced.
+  const savedTargetIds = new Set(initial?.lines.map((line) => line.targetAccountId) ?? []);
   const sources = accounts.filter(
-    (a) => (!a.isArchived || a.id === existing?.accountId) && config.sourceTypes.includes(a.type)
+    (a) => (!a.isArchived || a.id === initial?.accountId) && config.sourceTypes.includes(a.type)
   );
   const source = sources.find((a) => a.id === sourceId);
   const allowedTypes = source ? config.targets[source.type] ?? [] : [];
   const targets = accounts.filter(
     (a) => (!a.isArchived || savedTargetIds.has(a.id)) && a.id !== sourceId && allowedTypes.includes(a.type)
   );
+  const duplicateArchivedSource = duplicate !== undefined && source?.isArchived === true;
+  const duplicateArchivedLines = lines.map(
+    (line) => duplicate !== undefined && accounts.find((a) => a.id === line.targetAccountId)?.isArchived === true
+  );
+  const hasArchivedSelection = duplicateArchivedSource || duplicateArchivedLines.some(Boolean);
 
   const totalSatang = positiveSatang(total);
   const lineSatang = lines.map((line) => positiveSatang(line.amount));
@@ -283,7 +352,14 @@ export const TransactionForm: React.FC<{ existing?: HistoryTransaction }> = ({ e
   // S2-D6: the saved date may stay even when it is now older than T−90.
   const keepsSavedDate = existing !== undefined && txnDate === existing.txnDate;
   const canSubmit =
-    !!source && !!txnDate && totalSatang !== null && linesComplete && remaining === 0 && changed && !mutation.isPending;
+    !!source &&
+    !!txnDate &&
+    totalSatang !== null &&
+    linesComplete &&
+    remaining === 0 &&
+    changed &&
+    !hasArchivedSelection &&
+    !mutation.isPending;
 
   const clearErrors = () => {
     if (Object.keys(fieldErrors).length > 0) setFieldErrors({});
@@ -382,8 +458,21 @@ export const TransactionForm: React.FC<{ existing?: HistoryTransaction }> = ({ e
           </Link>
         </p>
         <h2 style={{ fontSize: font.size['2xl'], fontWeight: font.weight.semibold, color: colors.textPrimary, marginBottom: space[4] }}>
-          {existing ? 'Edit transaction' : 'New transaction'}
+          {existing ? 'Edit transaction' : duplicate ? 'Duplicate transaction' : 'New transaction'}
         </h2>
+
+        {duplicate && (
+          <p data-testid="duplicate-banner" style={{ margin: `-${space[2]} 0 ${space[4]}`, fontSize: font.size.sm, color: colors.textSecondary }}>
+            Copied from {duplicate.kind === 'RECEIPT' ? 'Receipt' : 'Payment'} of {formatSatang(duplicate.totalAmount)} on{' '}
+            {formatCalendarDate(duplicate.txnDate)}
+          </p>
+        )}
+
+        {duplicateNotice && (
+          <div role="status" data-testid="duplicate-notice" className="pt-error-banner" style={{ marginBottom: space[4] }}>
+            {duplicateNotice}
+          </div>
+        )}
 
         <div role="tablist" aria-label="Transaction type" style={{ display: 'flex', flexWrap: 'wrap', gap: space[2], marginBottom: space[5] }}>
           <button
@@ -449,13 +538,16 @@ export const TransactionForm: React.FC<{ existing?: HistoryTransaction }> = ({ e
                           .filter((a) => a.type === group.type)
                           .map((a) => (
                             <option key={a.id} value={a.id}>
-                              {a.name}
+                              {a.name}{a.isArchived ? ' (archived)' : ''}
                             </option>
                           ))}
                       </optgroup>
                     ))}
                   </select>
-                  <FieldError id={`${testIdPrefix}-source-error`} message={fieldErrors.accountId} />
+                  <FieldError
+                    id={`${testIdPrefix}-source-error`}
+                    message={fieldErrors.accountId ?? (duplicateArchivedSource ? 'This account is archived. Choose another account.' : undefined)}
+                  />
                 </div>
 
                 <div>
@@ -567,13 +659,19 @@ export const TransactionForm: React.FC<{ existing?: HistoryTransaction }> = ({ e
                             <optgroup key={group.type} label={config.targetGroupLabel[group.type] ?? group.type}>
                               {group.items.map((a) => (
                                 <option key={a.id} value={a.id}>
-                                  {a.name}
+                                  {a.name}{a.isArchived ? ' (archived)' : ''}
                                 </option>
                               ))}
                             </optgroup>
                           ))}
                         </select>
-                        <FieldError id={`line-target-${i}-error`} message={fieldErrors[`lines.${i}.targetAccountId`]} />
+                        <FieldError
+                          id={`line-target-${i}-error`}
+                          message={
+                            fieldErrors[`lines.${i}.targetAccountId`] ??
+                            (duplicateArchivedLines[i] ? 'This account is archived. Choose another account.' : undefined)
+                          }
+                        />
                       </div>
 
                       <div>

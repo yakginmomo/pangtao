@@ -5,6 +5,7 @@ import { transactionService } from '../services/transaction.service.js';
 import {
   CreateTransactionBodySchema,
   ListTransactionsQuerySchema,
+  UpdateFavoriteBodySchema,
   UpdateTransactionBodySchema,
 } from '../schemas/transaction.schema.js';
 import { IdParamSchema } from '../schemas/common.schema.js';
@@ -78,6 +79,21 @@ router.post('/:id/void', access('USER'), async (req: Request, res: Response, nex
     }
     const id = IdParamSchema.parse(req.params.id);
     const transaction = await transactionService.voidTransaction(req.user.id, id);
+    res.status(200).json({ transaction });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/** PATCH /api/v1/transactions/:id/favorite — User only; mark or unmark favorite (f-15 §2.1). */
+router.patch('/:id/favorite', access('USER'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      throw new AppError(401, 'UNAUTHENTICATED', 'Authentication required');
+    }
+    const id = IdParamSchema.parse(req.params.id);
+    const dto = UpdateFavoriteBodySchema.parse(req.body);
+    const transaction = await transactionService.setFavorite(req.user.id, id, dto.isFavorite);
     res.status(200).json({ transaction });
   } catch (error) {
     next(error);

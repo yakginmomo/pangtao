@@ -13,17 +13,26 @@ export const PositiveSatangSchema = z
   .positive({ message: 'amount must be greater than 0' })
   .max(10_000_000_000, { message: 'amount must be at most 100,000,000.00 THB' });
 
+/** Rejects empty string query values (`?limit=`) before numeric coercion turns `""` into `0`. */
+const emptyStringAsNaN = (value: unknown) => (value === '' ? Number.NaN : value);
+
 /** `?limit&offset` for paginated lists: limit 1–100 (default 50), offset ≥ 0 (default 0). */
 export const PaginationQuerySchema = z.object({
-  limit: z.coerce
-    .number({ invalid_type_error: 'limit must be a number' })
-    .int({ message: 'limit must be an integer' })
-    .min(1, { message: 'limit must be at least 1' })
-    .max(100, { message: 'limit must be at most 100' })
-    .default(50),
-  offset: z.coerce
-    .number({ invalid_type_error: 'offset must be a number' })
-    .int({ message: 'offset must be an integer' })
-    .min(0, { message: 'offset must be at least 0' })
-    .default(0),
+  limit: z.preprocess(
+    emptyStringAsNaN,
+    z.coerce
+      .number({ invalid_type_error: 'limit must be a number' })
+      .int({ message: 'limit must be an integer' })
+      .min(1, { message: 'limit must be at least 1' })
+      .max(100, { message: 'limit must be at most 100' })
+      .default(50)
+  ),
+  offset: z.preprocess(
+    emptyStringAsNaN,
+    z.coerce
+      .number({ invalid_type_error: 'offset must be a number' })
+      .int({ message: 'offset must be an integer' })
+      .min(0, { message: 'offset must be at least 0' })
+      .default(0)
+  ),
 });

@@ -85,6 +85,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               <NavLink to="/transactions" end data-testid="nav-history" className="pt-nav-link">
                 History
               </NavLink>
+              <NavLink to="/favorites" end data-testid="nav-favorites" className="pt-nav-link">
+                Favorites
+              </NavLink>
               <NavLink to="/summary" end data-testid="nav-summary" className="pt-nav-link">
                 Summary
               </NavLink>
