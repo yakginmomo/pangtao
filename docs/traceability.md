@@ -201,7 +201,7 @@ Actual tests and results for each Sprint 2 feature, in the same form as §3. Aut
 
 The same mutation exposed a weak test. With only the unique-violation mapping disabled, the parallel-create test (two simultaneous creates) still passed, because the name check normally wins the race and returns the 409 itself, so that test does not prove the mapping. The mapping therefore moved into `account.rules.ts` as a pure function and is pinned by two deterministic tests: a unit test, and a test that takes the real error PostgreSQL raises for a duplicate `(user_id, name)` and passes it through the mapping. The mapping also now acts only on a violation whose target includes `name`; a unique violation on another key is returned unchanged. The parallel-create test stays as an end-to-end check, not as evidence for the mapping.
 
-**Status:** at the time of writing, PR #66 is open with CI passing on `fa7231e`; F-09 is not yet merged into `sprint-2-staging` and not released. The statuses and the tested commit are updated when it merges.
+**Status:** **tested** (updated 27 Nov 2026, Issue #78). F-09 merged into `sprint-2-staging` by PR #66 (`b0e8682`) and released to `main` in PR #71 (`0d66ae2`, tag `v0.2.0`), deployed as `pangtao-00011-28l`. The deploy run [45890385872](https://github.com/yakginmomo/pangtao/actions/runs/45890385872) on `0d66ae2` passed: 198 unit and API tests and 32 E2E tests, 0 failed, 0 skipped. It becomes **accepted** once the Sprint 2 journey post-deploy checks are recorded in the [release record](sprints/sprint-2/release-v0.2.0.md) §2.2. Earlier status text is in git history.
 
 ### F-10 Loans (contract 1.0, Issue #60)
 
@@ -241,7 +241,7 @@ The same mutation exposed a weak test. With only the unique-violation mapping di
 
 TEST-10.9 needs "Alice with no loan accounts", but every seeded user owns a Credit Card (Loan Taken). The test archives that zero-balance card for the empty-state step, which `GET /loans` then leaves out (f-10 §1), and unarchives it afterwards.
 
-**Status:** at the time of writing, F-10 is implemented on its branch and all ten ACs pass locally. It is not yet reviewed, merged into `sprint-2-staging` or released. The statuses and the tested commit are updated when it merges.
+**Status:** **tested** (updated 27 Nov 2026, Issue #78). F-10 merged into `sprint-2-staging` by PR #67 (`92916f0`) and released to `main` in PR #71 (`0d66ae2`, tag `v0.2.0`), deployed as `pangtao-00011-28l`. The deploy run [45890385872](https://github.com/yakginmomo/pangtao/actions/runs/45890385872) on `0d66ae2` passed: 198 unit and API tests and 32 E2E tests, 0 failed, 0 skipped. It becomes **accepted** once the Sprint 2 journey post-deploy checks are recorded in the [release record](sprints/sprint-2/release-v0.2.0.md) §2.2. Earlier status text is in git history.
 
 ### F-11 Transfers (contract 1.1, Issue #58)
 
@@ -269,7 +269,7 @@ TEST-10.9 needs "Alice with no loan accounts", but every seeded user owns a Cred
 | AC-11.7 | TEST-11.7 | A | `tests/api/transfers.api.test.ts` | PASS; failing-first `0d4d17b` |
 | AC-11.8 | TEST-11.8 | E | `tests/e2e/transfers.spec.ts` | PASS locally (step as corrected in f-11 1.1) |
 
-**Status:** at the time of writing, F-11 is implemented on its branch and all eight ACs pass locally. It is not yet reviewed, merged into `sprint-2-staging` or released. The statuses and the tested commit are updated when it merges.
+**Status:** **tested** (updated 27 Nov 2026, Issue #78). F-11 merged into `sprint-2-staging` by PR #68 (`df027a3`) and released to `main` in PR #71 (`0d66ae2`, tag `v0.2.0`), deployed as `pangtao-00011-28l`. The deploy run [45890385872](https://github.com/yakginmomo/pangtao/actions/runs/45890385872) on `0d66ae2` passed: 198 unit and API tests and 32 E2E tests, 0 failed, 0 skipped. It becomes **accepted** once the Sprint 2 journey post-deploy checks are recorded in the [release record](sprints/sprint-2/release-v0.2.0.md) §2.2. Earlier status text is in git history.
 
 ### F-12 Opening balance management (contract 1.1, Issue #59)
 
@@ -304,7 +304,7 @@ The f-12 §5 DoD checks are the untagged tests "two parallel removes of the same
 
 **F-13 PR #70 review defect (f-12 1.1).** With F-13, history and detail return voided rows and mark a transaction "Edited" when `updatedAt` is later than `createdAt`. The remove let Prisma's `@updatedAt` move `updated_at`, so a removed opening balance that was never corrected showed both "Voided on" and "Edited". Contract `9c9b9b1` (f-12 1.1, traceability v2.4); red `542c290`: TEST-12.3 failed with `expected 1795723472184 to be 1795723472178` on the `updatedAt` check; green `e2b78bc`: the remove writes the saved `updated_at`, as the F-13 void does. Fixed on the F-13 branch, after F-12 was merged.
 
-**Status:** at the time of writing, F-12 is implemented on its branch and all seven ACs pass locally. It is not yet reviewed, merged into `sprint-2-staging` or released. The statuses and the tested commit are updated when it merges.
+**Status:** **tested** (updated 27 Nov 2026, Issue #78). F-12 merged into `sprint-2-staging` by PR #69 (`ae7aa09`) and released to `main` in PR #71 (`0d66ae2`, tag `v0.2.0`), deployed as `pangtao-00011-28l`. The deploy run [45890385872](https://github.com/yakginmomo/pangtao/actions/runs/45890385872) on `0d66ae2` passed: 198 unit and API tests and 32 E2E tests, 0 failed, 0 skipped. It becomes **accepted** once the Sprint 2 journey post-deploy checks are recorded in the [release record](sprints/sprint-2/release-v0.2.0.md) §2.2. Earlier status text is in git history.
 
 ### F-13 Edit and void transactions (contract 1.1, Issue #61)
 
@@ -331,4 +331,4 @@ The f-12 §5 DoD checks are the untagged tests "two parallel removes of the same
 | AC-13.9 | TEST-13.9 | U, A | `tests/unit/edit-void.rules.test.ts`, `tests/api/edit-void.api.test.ts` | PASS; API failing-first `972b5df` (in setup); unit is a regression guard |
 | AC-13.10 | TEST-13.10 | E | `tests/e2e/edit-void.spec.ts` | PASS locally; failing-first `972b5df` |
 
-**Status:** at the time of writing, F-13 is implemented on its branch and all ten ACs pass locally. It includes F-12 through the merge `40fc961`. It is not yet reviewed, merged into `sprint-2-staging` or released. The statuses and the tested commit are updated when it merges.
+**Status:** **tested** (updated 27 Nov 2026, Issue #78). F-13 merged into `sprint-2-staging` by PR #70 (`a05a0fb`) and released to `main` in PR #71 (`0d66ae2`, tag `v0.2.0`), deployed as `pangtao-00011-28l`. The deploy run [45890385872](https://github.com/yakginmomo/pangtao/actions/runs/45890385872) on `0d66ae2` passed: 198 unit and API tests and 32 E2E tests, 0 failed, 0 skipped. It becomes **accepted** once the Sprint 2 journey post-deploy checks are recorded in the [release record](sprints/sprint-2/release-v0.2.0.md) §2.2. Earlier status text is in git history.
