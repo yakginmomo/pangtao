@@ -61,7 +61,7 @@ Every 401 body was `{"error":{"code":"UNAUTHENTICATED","message":"Authentication
 
 ### 2.2 Sprint 2 journey (recorded)
 
-Run by Supichaya on 27 Nov 2026 in the browser on the public URL (`pangtao-837912025702.asia-southeast1.run.app`, the same service; revision `pangtao-00011-28l`), after the Lab 6 §4.1 reset and the Sprint 1 journey. Evidence: 21 screenshots kept by the team (dashboard after each step, forms, History, DevTools console). Times of day were not recorded.
+Run by Supichaya on 27 Nov 2026 in the browser on the public URL (`pangtao-837912025702.asia-southeast1.run.app`, the same service; revision `pangtao-00011-28l`), after the Lab 6 §4.1 reset and the Sprint 1 journey. Evidence: 28 screenshots in [evidence/release-v0.2.0/](evidence/release-v0.2.0/README.md) (dashboard after each step, forms, History, DevTools console), mapped to each check there. Times of day were not recorded.
 
 **Starting state (Sprint 1 journey):** Bank Account 79,200.00 (opening 50,000.00 on 1 Nov), Credit Card 400.00, month income 30,000.00, expense 1,200.00, net 28,800.00. As expected (plan.md §2).
 
@@ -73,14 +73,15 @@ Run by Supichaya on 27 Nov 2026 in the browser on the public URL (`pangtao-83791
 | PD2-11 | 4. F-12: correct Bank opening 50,000.00 → 55,000.00 | Saved | Dashboard "Opening balance 55,000.00 ฿ on 01 Nov 2026"; History opening row 55,000.00 | PASS |
 | PD2-12 | 5. F-13: edit card charge to Dining 900.00 (total 1,400.00); void the 800.00 repayment | Saved; voided | Charge saved as 1,400.00 (2 lines); repayment detail shows **Voided**, "Voided on 27 Nov 2026" and struck-through 800.00 | PASS |
 | PD2-13 | 6. Balances, summary, loans, history | Bank 73,500.00; Savings 10,000.00; Wallet 5,000.00; card 1,400.00; Loan to Bob 1,500.00; Loan from Mom 5,000.00; month income 30,000.00, expense 1,400.00, net 28,600.00; owed to me 1,500.00 / I owe 6,400.00; voided row marked | Dashboard shows every balance as expected, Owed to Me 1,500.00, Debts 6,400.00, month 30,000.00 / 1,400.00 / 28,600.00; History lists 8 transactions with the repayment marked Voided. The Summary and Loans screens themselves were not captured (the Dashboard figures come from the same summary and accounts APIs) | PASS |
-| PD2-14 | 7. Payment to archived Savings; transfer Bank → Bank | 400 `INVALID_TARGET_ACCOUNT` ×2, nothing saved | Bank → Bank: `[400, 'INVALID_TARGET_ACCOUNT']`. Payment to Savings: **`[201, undefined]`**, a 1.00 THB Payment Bank Account → Savings was saved. Whether Savings had been archived before this call was not recorded | **FAIL / unresolved** (see §2.3) |
-| PD2-15 | 8. Bob edits/voids Alice's card charge; Admin `POST /accounts`, `GET /loans` | Bob 404, 404; Admin 403, 403 | Bob: edit 404, void 404. Admin: 403, 403. An earlier run of the same snippet in **Alice's** session returned edit 400 and void **200** (see §2.3) | PASS (Bob and Admin) |
+| PD2-14 | 7. Payment to archived Savings; transfer Bank → Bank | 400 `INVALID_TARGET_ACCOUNT` ×2, nothing saved | First run: Bank → Bank `[400, 'INVALID_TARGET_ACCOUNT']`; payment to Savings `[201]` because Savings was still active (§2.3 item 1). **Re-run** after archiving Savings (Accounts lists it under Archived (1) with Unarchive): console `Savings archived? true`, payment to archived Savings **400 `INVALID_TARGET_ACCOUNT`** | PASS (re-run) |
+| PD2-15 | 8. Bob edits/voids Alice's card charge; Admin `POST /accounts`, `GET /loans` | Bob 404, 404; Admin 403, 403 | Bob: edit 404, void 404. Admin: 403, 403. An earlier run of the same snippet in **Alice's** session returned edit 400 and void **200** (§2.3 item 2). **Re-run** in an Incognito window as Bob (`running as bob@example.test`) against Alice's active 30,000.00 Salary receipt: edit 404, void 404; Alice's History afterwards still shows that receipt active | PASS |
 | PD2-16 | Persistence: log out, log in again, reload | Same balances as before logging out | Balances unchanged after log out, log in and reload (run after §2.3, so the state includes the two deviations: Bank Account 73,499.00, Savings 10,001.00) | PASS |
 
 ### 2.3 Deviations
 
 1. **PD2-14, payment to Savings accepted (201).** Checked afterwards on Accounts: Savings is **active** (it shows Archive, not Unarchive) with 10,001.00, and Bank Account shows 73,499.00. Savings had not been archived before the call, so the request was a valid transfer and 201 is correct: a **procedure error, not a defect**. PD2-14's archived-target case still has to be re-run with Savings archived first. The 1.00 THB Payment stays in Alice's ledger until it is voided or the ledger is reset.
 2. **PD2-15, snippet run in Alice's session.** The Bob snippet was first run in the tab logged in as Alice. Edit returned 400 (the record is hers, so the request reached validation: source equals target) and void returned 200, so **Alice's 1,400.00 card charge (`b58f4921…`) is now voided**. This is a procedure error, not a cross-user defect: Bob's own run returned 404 for both. It changes Alice's ledger after PD2-13 was recorded (card debt and month expense drop by 1,400.00), so the Sprint 3 journey cannot start from the Sprint 2 end state without a reset and re-run.
+3. **A second 1.00 THB Payment from Bank Account appears in Alice's History** after the re-runs (screenshot 28: two 1.00 Payments, 10 transactions). Only one 201 was observed (the first PD2-14 run), and Bank Account was 73,499.00 with Savings 10,001.00 before the PD2-14 re-run (screenshots 22–24). **Not yet explained.** Next step: open both 1.00 Payments to see each target account, and check the Bank Account and Savings balances now. If the second Payment was saved by the re-run that returned 400, that is a Critical atomicity defect (BR-07) and blocks the next release; if it comes from an extra run of the first snippet, it is a procedure error.
 
 ---
 
@@ -93,6 +94,7 @@ Run by Supichaya on 27 Nov 2026 in the browser on the public URL (`pangtao-83791
 - [x] Lab 7 readiness: L7-01 marked fixed and released.
 - [x] Sprint 2 journey PD2-9 to PD2-13 and PD2-15 recorded as passed (§2.2).
 - [x] PD2-8 duplicate-name check and PD2-16 persistence recorded; PD2-14's 201 explained (§2.3 item 1).
-- [ ] Re-run PD2-14 with Savings archived first, and re-run the Bob check on an active Alice transaction (§2.3 item 2).
+- [x] PD2-14 re-run with Savings archived (400) and Bob check re-run on an active Alice transaction (404, 404).
+- [ ] Explain the second 1.00 THB Payment (§2.3 item 3).
 - [ ] Reset Alice's ledger (Lab 6 §4.1 plus the non-seed accounts) before the Sprint 3 journey, because of §2.3 items 1 and 2.
 - [ ] After the remaining checks pass: close Issues #57 to #61 and #62, and mark F-09 to F-13 **accepted** in traceability §4 and the Sprint 3 remaining-work table.
