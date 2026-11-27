@@ -173,7 +173,7 @@ Dates more than 90 days old are inserted through Prisma, as TEST-13.4 does, beca
 
 ## 7. Remaining work (Part C)
 
-Status at **27 November 2026**, base `sprint-3-staging` at `2c8bd62` (F-15 and the Sprint 2 release record merged) and `main` at `0d66ae2` (`v0.2.0`). Updated at every merge and release; previous states stay in git history.
+Status at **27 November 2026**, base `sprint-3-staging` at `d0bc6fd` and `main` at `b023708` (`v0.3.0`, F-15 released and accepted). Updated at every merge and release; previous states stay in git history.
 
 ### 7.1 Status vocabulary
 
@@ -191,7 +191,7 @@ A feature is reported at the lowest status any of its ACs has reached; an unexec
 
 | Feature or defect | Current status | Remaining action | Owner and target |
 |---|---|---|---|
-| **F-15** Favorites and duplicate (#73) | **tested**: 9 of 9 ACs pass; merged into `sprint-3-staging` by PR #81 (`49018bc`); CI run [45937132716](https://github.com/yakginmomo/pangtao/actions/runs/45937132716) on the PR head `899b995` (same tree as `49018bc`): 204 unit and API tests, 35 E2E, 0 failed, 0 skipped; RED `1764d74`, GREEN `84d41bd`/`fee71b1` | Release `v0.3.0` to `main`; post-deploy checks of Sprint 3 journey steps 2, 5 and 6; then accepted | Chawin (review: Supichaya) · in the checkpoint candidate by 29 Nov |
+| **F-15** Favorites and duplicate (#73) | **accepted**: 9 of 9 ACs pass; PR #81 (`49018bc`), RED `1764d74`, GREEN `84d41bd`/`fee71b1`; released in `v0.3.0` (`b023708`, release PR #84), deploy run [45948980771](https://github.com/yakginmomo/pangtao/actions/runs/45948980771): 204 unit and API tests, 35 E2E, 0 failed, 0 skipped; revision `pangtao-00012-29s`; post-deploy checks PD3-1 to PD3-11 passed on 27 Nov ([release-v0.3.0.md](release-v0.3.0.md)) | Close #73; multi-line duplicate and the full journey re-run on a reset ledger at `v1.0.0` | Chawin (review: Supichaya) · done 27 Nov |
 | **F-14** Search and filter (#74) | planned (contract 1.0 merged, PR #72); 0 of 9 ACs; no tested commit | Issue; RED tests for AC-14.1–14.9; strict query schema, filter SQL, filter panel with URL state; merge after F-15 | Chawin · before 13 Dec (checkpoint candidate if tested in time) |
 | **F-17** Administrator creates a user (#75) | planned (contract 1.0 merged, PR #72); 0 of 7 ACs | Issue; RED tests; `POST /admin/users`, `EMAIL_EXISTS`, Create user dialog; merge | Supichaya · before 13 Dec |
 | **F-16** Category summary and monthly report (#76) | planned (contract 1.0 merged, PR #72); 0 of 8 ACs | Issue; RED tests incl. the share-rounding unit test; two summary endpoints; Reports screen; merge | Chawin · before 13 Dec |
