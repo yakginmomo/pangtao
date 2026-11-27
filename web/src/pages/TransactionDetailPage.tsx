@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { AppShell } from '../components/AppShell';
 import { ErrorBanner } from '../components/ErrorBanner';
+import { FavoriteButton } from '../components/FavoriteButton';
 import { Icon } from '../components/Icon';
 import { TransactionKindBadge, VoidedBadge } from '../components/TransactionKindBadge';
 import { VoidTransactionDialog } from '../components/VoidTransactionDialog';
@@ -178,22 +179,38 @@ export const TransactionDetailPage: React.FC = () => {
                 Change it from the Dashboard
               </p>
             )}
-            {editable && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: space[2], flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  data-testid="transaction-void"
-                  onClick={() => {
-                    setNotice(null);
-                    setConfirmingVoid(true);
-                  }}
-                  className="pt-pill-btn"
-                >
-                  Void
-                </button>
-                <Link to={`/transactions/${transaction.id}/edit`} data-testid="transaction-edit" className="pt-btn-primary" style={{ textDecoration: 'none' }}>
-                  Edit
-                </Link>
+            {transaction.kind !== 'OPENING_BALANCE' && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: space[2], flexWrap: 'wrap' }}>
+                <FavoriteButton transaction={transaction} showLabel onNotice={setNotice} />
+                <div style={{ display: 'flex', gap: space[2], flexWrap: 'wrap', marginLeft: 'auto' }}>
+                  <Link
+                    to={`/transactions/new?duplicateOf=${transaction.id}`}
+                    data-testid="transaction-duplicate"
+                    className="pt-pill-btn"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    <Icon name="content_copy" size={0.95} />
+                    <span>Duplicate</span>
+                  </Link>
+                  {editable && (
+                    <>
+                      <button
+                        type="button"
+                        data-testid="transaction-void"
+                        onClick={() => {
+                          setNotice(null);
+                          setConfirmingVoid(true);
+                        }}
+                        className="pt-pill-btn"
+                      >
+                        Void
+                      </button>
+                      <Link to={`/transactions/${transaction.id}/edit`} data-testid="transaction-edit" className="pt-btn-primary" style={{ textDecoration: 'none' }}>
+                        Edit
+                      </Link>
+                    </>
+                  )}
+                </div>
               </div>
             )}
           </section>

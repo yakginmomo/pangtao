@@ -35,10 +35,16 @@ export function errorHandler(
 
   // Zod schema validation errors
   if (err instanceof ZodError) {
-    const details: ApiErrorDetail[] = err.errors.map((e) => ({
-      field: e.path.join('.'),
-      issue: e.message,
-    }));
+    const details: ApiErrorDetail[] = err.errors.flatMap((e) => {
+      if (e.code === 'unrecognized_keys' && e.keys.length > 0) {
+        const prefix = e.path.length > 0 ? `${e.path.join('.')}.` : '';
+        return e.keys.map((key) => ({
+          field: `${prefix}${key}`,
+          issue: `Unknown field: ${key}`,
+        }));
+      }
+      return [{ field: e.path.join('.'), issue: e.message }];
+    });
     return res.status(400).json({
       error: {
         code: 'VALIDATION_ERROR',
