@@ -24,3 +24,4 @@ Screenshots for [release-v0.2.0.md](../../release-v0.2.0.md) §2.2–§2.3, take
 | `26-pd2-14-rerun-console-400.png` | PD2-14 re-run | `Savings archived? true`; payment to archived Savings 400 `INVALID_TARGET_ACCOUNT` |
 | `27-pd2-15-rerun-bob-active-txn.png` | PD2-15 re-run | Incognito as Bob (`running as bob@example.test`): edit 404, void 404 on an active Alice transaction |
 | `28-pd2-15-rerun-alice-history.png` | PD2-15 re-run | Alice's History after the re-run: 10 transactions, Salary receipt 30,000.00 still active, card charge 1,400.00 Voided, two 1.00 Payments from Bank Account (see release record §2.3 item 3) |
+| `29-extra-payment-81fef9e8.png`, `30-extra-payment-7d499ca9.png` | §2.3 item 3 | Both 1.00 THB Payments: 27 Nov 2026, Bank Account → Savings, no memo, active |
