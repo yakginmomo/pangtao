@@ -48,6 +48,14 @@ export interface VoidedTransaction extends Omit<Transaction, 'lines'> {
   voidedAt: string;
 }
 
+/** f-15 §2.1 PATCH favorite response. */
+export interface FavoriteTransaction {
+  id: string;
+  isFavorite: boolean;
+  /** ISO 8601 timestamp (unchanged on favorite toggle, S3-D6). */
+  updatedAt: string;
+}
+
 export type TransactionKind = 'PAYMENT' | 'RECEIPT' | 'OPENING_BALANCE';
 
 /** f-07 §2.1 line: amounts are integer satang. */
@@ -59,7 +67,7 @@ export interface HistoryLine {
   note: string | null;
 }
 
-/** f-07 §2.1 history item and detail (1.3: with voidedAt, createdAt and updatedAt). */
+/** f-07 §2.1 history item and detail (1.3/1.4: with voidedAt, createdAt, updatedAt and isFavorite). */
 export interface HistoryTransaction {
   id: string;
   kind: TransactionKind;
@@ -70,6 +78,7 @@ export interface HistoryTransaction {
   /** Integer satang. */
   totalAmount: number;
   memo: string | null;
+  isFavorite: boolean;
   lines: HistoryLine[];
   /** ISO 8601 timestamp, or null while the transaction counts (BR-12). */
   voidedAt: string | null;

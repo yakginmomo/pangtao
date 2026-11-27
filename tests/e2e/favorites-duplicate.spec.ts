@@ -215,6 +215,7 @@ test.describe('F-15 Favorites and Duplicate (STS)', () => {
     await expectNoHorizontalOverflow(page);
 
     // Bob has no favorites -> empty state.
+    await page.context().clearCookies();
     await loginAs(page, 'bob@example.test');
     await page.getByTestId('nav-favorites').click();
     await expect(page.getByTestId('favorites-empty')).toContainText(

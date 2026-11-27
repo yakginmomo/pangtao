@@ -708,6 +708,7 @@ body {
   .pt-app-nav {
     margin-left: 0;
     gap: 0.5rem;
+    flex-wrap: wrap;
   }
 
   .pt-nav-link {
