@@ -79,9 +79,9 @@ Run by Supichaya on 27 Nov 2026 in the browser on the public URL (`pangtao-83791
 
 ### 2.3 Deviations
 
-1. **PD2-14, payment to Savings accepted (201).** Checked afterwards on Accounts: Savings is **active** (it shows Archive, not Unarchive) with 10,001.00, and Bank Account shows 73,499.00. Savings had not been archived before the call, so the request was a valid transfer and 201 is correct: a **procedure error, not a defect**. PD2-14's archived-target case still has to be re-run with Savings archived first. The 1.00 THB Payment stays in Alice's ledger until it is voided or the ledger is reset.
+1. **PD2-14, payment to Savings accepted (201).** Checked afterwards on Accounts: Savings is **active** (it shows Archive, not Unarchive) with 10,001.00, and Bank Account shows 73,499.00. Savings had not been archived before the call, so the request was a valid transfer and 201 is correct: a **procedure error, not a defect**. PD2-14 was re-run with Savings archived and returned 400 (§2.2). The 1.00 THB Payment stays in Alice's ledger until it is voided or the ledger is reset.
 2. **PD2-15, snippet run in Alice's session.** The Bob snippet was first run in the tab logged in as Alice. Edit returned 400 (the record is hers, so the request reached validation: source equals target) and void returned 200, so **Alice's 1,400.00 card charge (`b58f4921…`) is now voided**. This is a procedure error, not a cross-user defect: Bob's own run returned 404 for both. It changes Alice's ledger after PD2-13 was recorded (card debt and month expense drop by 1,400.00), so the Sprint 3 journey cannot start from the Sprint 2 end state without a reset and re-run.
-3. **A second 1.00 THB Payment from Bank Account appears in Alice's History** after the re-runs (screenshot 28: two 1.00 Payments, 10 transactions). Only one 201 was observed (the first PD2-14 run), and Bank Account was 73,499.00 with Savings 10,001.00 before the PD2-14 re-run (screenshots 22–24). Both are Bank Account → Savings, 1.00 THB, dated 27 Nov 2026, active (`81fef9e8…` and `7d499ca9…`, screenshots 29–30). Two active 1.00 Payments to Savings would make Savings 10,002.00, but screenshots 22–25 show 10,001.00 both before and after Savings was archived, so the second Payment was saved after screenshot 25. Timestamps from the API (screenshot 31, UTC; Bangkok is +7):
+3. **A second 1.00 THB Payment from Bank Account appears in Alice's History** after the re-runs (screenshot 28: two 1.00 Payments, 10 transactions). Only one 201 was observed (the first PD2-14 run), and Bank Account was 73,499.00 with Savings 10,001.00 before the PD2-14 re-run (screenshots 22–24). Both are Bank Account → Savings, 1.00 THB, dated 27 Nov 2026, active (`81fef9e8…` and `7d499ca9…`, screenshots 29–30). Screenshots 22–25 show Savings at 10,001.00 before and after the first archive; the request log below shows the second Payment came later. Timestamps from the API (screenshot 31, UTC; Bangkok is +7):
 
    | Row | Created | Voided |
    |---|---|---|
@@ -89,7 +89,19 @@ Run by Supichaya on 27 Nov 2026 in the browser on the public URL (`pangtao-83791
    | Payment `81fef9e8` (first PD2-14 run, 201) | 04:48:38 | — |
    | Payment `7d499ca9` (second) | **05:06:21** (12:06 Bangkok) | — |
 
-   Savings is now 1,000,200 satang (10,002.00) and archived. The first Payment fits the screenshot order (PD2-14 before PD2-15). The second was saved about 13 minutes after the card charge was voided, in the window in which the PD2-8 duplicate check, the archive and the PD2-14 re-run were done (screenshots 22–26). The create path checks the archived target before inserting, inside the same database transaction (`createTransaction` → `checkVersion` in `transaction.service.ts`), so a 400 cannot leave a row behind. That leaves two explanations: a POST sent while Savings was still active (for example the first PD2-14 snippet run again from console history), with the Accounts screenshots taken before it; or an archived target accepted. **Not yet explained.** Next step: in Cloud Logging, list the requests to `pangtao-00011-28l` between 05:00 and 05:10 UTC and compare the time of `PATCH /api/v1/accounts/{Savings}` (archive) with the `POST /api/v1/transactions` at 05:06:21 and its status. If the second Payment was saved by the re-run that returned 400, that is a Critical atomicity defect (BR-07) and blocks the next release; if it comes from an extra run of the first snippet, it is a procedure error.
+   Savings is now 1,000,200 satang (10,002.00) and archived. The first Payment fits the screenshot order (PD2-14 before PD2-15). The second was saved about 13 minutes after the card charge was voided, in the window in which the PD2-8 duplicate check, the archive and the PD2-14 re-run were done (screenshots 22–26). The create path checks the archived target before inserting, inside the same database transaction (`createTransaction` → `checkVersion` in `transaction.service.ts`), so a 400 cannot leave a row behind. **Resolved from the Cloud Run request log** (Logs Explorer, revision `pangtao-00011-28l`, POST and PATCH, screenshot 32; Bangkok time):
+
+   | Time | Request | Status | Meaning |
+   |---|---|---|---|
+   | 12:00:38 | `POST /api/v1/accounts` | 409 | PD2-8 duplicate `Savings` |
+   | 12:04:05 | `PATCH /api/v1/accounts/05bfcb64…` | 200 | Savings archived (screenshots 23–25, 10,001.00) |
+   | 12:05:29 | `POST /api/v1/transactions` | 400 | PD2-14 re-run (screenshot 26) |
+   | 12:06:05 | `POST /api/v1/transactions` | 400 | Re-run again, still rejected |
+   | 12:06:17 | `PATCH /api/v1/accounts/05bfcb64…` | 200 | Savings **unarchived** |
+   | 12:06:21 | `POST /api/v1/transactions` | **201** | Payment `7d499ca9` saved while Savings was active |
+   | 12:06:34 | `PATCH /api/v1/accounts/05bfcb64…` | 200 | Savings archived again |
+
+   The second Payment was sent in the 17 seconds in which Savings was unarchived, so the server accepted a valid transfer: a **procedure error, not a defect**. Every request to archived Savings was rejected (400 at 12:05:29 and 12:06:05). The three PATCH calls are read as archive, unarchive, archive from their order and from Savings ending archived; the log does not show the request bodies. The Bob re-run follows at 12:08:12–12:08:13 (`PATCH` and `POST …/void` on `ce6627fb…`, both 404).
 
 ---
 
@@ -103,6 +115,7 @@ Run by Supichaya on 27 Nov 2026 in the browser on the public URL (`pangtao-83791
 - [x] Sprint 2 journey PD2-9 to PD2-13 and PD2-15 recorded as passed (§2.2).
 - [x] PD2-8 duplicate-name check and PD2-16 persistence recorded; PD2-14's 201 explained (§2.3 item 1).
 - [x] PD2-14 re-run with Savings archived (400) and Bob check re-run on an active Alice transaction (404, 404).
-- [ ] Explain the second 1.00 THB Payment (§2.3 item 3).
+- [x] Second 1.00 THB Payment explained from the request log (§2.3 item 3): procedure error.
 - [ ] Reset Alice's ledger (Lab 6 §4.1 plus the non-seed accounts) before the Sprint 3 journey, because of §2.3 items 1 and 2.
-- [ ] After the remaining checks pass: close Issues #57 to #61 and #62, and mark F-09 to F-13 **accepted** in traceability §4 and the Sprint 3 remaining-work table.
+- [x] F-09 to F-13 marked **accepted** in traceability §4.
+- [ ] Close Issues #57 to #61 and #62; mark the Sprint 2 rows accepted in the Sprint 3 remaining-work table.
