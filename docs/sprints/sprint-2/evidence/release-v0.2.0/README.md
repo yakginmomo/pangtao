@@ -25,3 +25,4 @@ Screenshots for [release-v0.2.0.md](../../release-v0.2.0.md) §2.2–§2.3, take
 | `27-pd2-15-rerun-bob-active-txn.png` | PD2-15 re-run | Incognito as Bob (`running as bob@example.test`): edit 404, void 404 on an active Alice transaction |
 | `28-pd2-15-rerun-alice-history.png` | PD2-15 re-run | Alice's History after the re-run: 10 transactions, Salary receipt 30,000.00 still active, card charge 1,400.00 Voided, two 1.00 Payments from Bank Account (see release record §2.3 item 3) |
 | `29-extra-payment-81fef9e8.png`, `30-extra-payment-7d499ca9.png` | §2.3 item 3 | Both 1.00 THB Payments: 27 Nov 2026, Bank Account → Savings, no memo, active |
+| `31-extra-payment-timestamps.png` | §2.3 item 3 | Console: `81fef9e8` created 04:48:38Z, `7d499ca9` created 05:06:21Z, card charge `b58f4921` created 04:29:29Z and voided 04:53:19Z; Savings 1,000,200 satang, archived |
