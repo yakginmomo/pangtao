@@ -1,6 +1,6 @@
 # F-15 Favorites and Duplicate: Engineering Contract
 
-Requirements: FR-19, FR-20; BR-01, BR-02, BR-12, BR-15 (and BR-04–07, 10, 14, 16 on the saved copy); NFR-02, NFR-08 · Depends on: F-07 (and the F-05/F-06 form) · Issue: to open · Contract version: 1.0 (see [version history](README.md#8-contract-version-history)) · Suggested branch: `feature/F-15-favorites-duplicate`
+Requirements: FR-19, FR-20; BR-01, BR-02, BR-12, BR-15 (and BR-04–07, 10, 14, 16 on the saved copy); NFR-02, NFR-08 · Depends on: F-07 (and the F-05/F-06 form) · Issue: #73 · Contract version: 1.0 (see [version history](README.md#8-contract-version-history)) · Suggested branch: `feature/F-15-favorites-duplicate`
 
 Shared conventions and error codes are in [Sprint 1 README](../sprint-1/README.md) §2 and [Sprint 3 README](README.md) §2; the Sprint 3 Definition of Done is in [Sprint 3 README](README.md) §5.
 

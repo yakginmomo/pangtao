@@ -14,13 +14,13 @@ The Deliverable 2 checkpoint (29 November) needs the contracts for all five feat
 
 ### 1.1 Sprint 3 feature inventory
 
-| ID | Feature | Issue | Contract document | Linked requirements | Depends on | Owner (proposed) |
+| ID | Feature | Issue | Contract document | Linked requirements | Depends on | Owner |
 |---|---|---|---|---|---|---|
-| **F-14** | Search and filter history | to open | [f-14-search-filter.md](f-14-search-filter.md) | FR-18; BR-01, 02, 12; NFR-02, 07, 08 | F-07 | Chawin |
-| **F-15** | Favorites and duplicate | to open | [f-15-favorites-duplicate.md](f-15-favorites-duplicate.md) | FR-19, 20; BR-01, 02, 12, 15 (and the create-time rules BR-04–07, 10, 14, 16 on the copy); NFR-02, 08 | F-07 (F-05, F-06 form) | Supichaya |
-| **F-16** | Category summary and monthly report | to open | [f-16-category-monthly-report.md](f-16-category-monthly-report.md) | FR-23, 24; BR-01, 02, 08, 09, 12; NFR-02, 03, 07, 08 | F-08 | Chawin |
-| **F-17** | Administrator creates a user | to open | [f-17-admin-create-user.md](f-17-admin-create-user.md) | FR-07; BR-02; NFR-01, 02, 04, 08, 10 | F-02 | Supichaya |
-| **F-18** | Product hardening | to open | [f-18-hardening.md](f-18-hardening.md) | NFR-07, 08; regression of NFR-02, 03, 04 | all | Both (performance: Chawin; usability and failure handling: Supichaya) |
+| **F-14** | Search and filter history | #74 | [f-14-search-filter.md](f-14-search-filter.md) | FR-18; BR-01, 02, 12; NFR-02, 07, 08 | F-07 | Chawin |
+| **F-15** | Favorites and duplicate | #73 | [f-15-favorites-duplicate.md](f-15-favorites-duplicate.md) | FR-19, 20; BR-01, 02, 12, 15 (and the create-time rules BR-04–07, 10, 14, 16 on the copy); NFR-02, 08 | F-07 (F-05, F-06 form) | Chawin |
+| **F-16** | Category summary and monthly report | #76 | [f-16-category-monthly-report.md](f-16-category-monthly-report.md) | FR-23, 24; BR-01, 02, 08, 09, 12; NFR-02, 03, 07, 08 | F-08 | Chawin |
+| **F-17** | Administrator creates a user | #75 | [f-17-admin-create-user.md](f-17-admin-create-user.md) | FR-07; BR-02; NFR-01, 02, 04, 08, 10 | F-02 | Supichaya |
+| **F-18** | Product hardening | #77 | [f-18-hardening.md](f-18-hardening.md) | NFR-07, 08; regression of NFR-02, 03, 04 | all | Both (performance: Chawin; usability and failure handling: Supichaya) |
 
 Supichaya writes the Sprint 3 contracts and Chawin reviews them (Sprint 2 README §1.1). The owners above are a proposal for that review; the owner drives the implementation and the other student reviews the PR. All five contracts are merged before the first failing test of any Sprint 3 feature. Issue numbers are filled in when the Issues are opened, before the first branch.
 
@@ -191,7 +191,7 @@ A feature is reported at the lowest status any of its ACs has reached; an unexec
 
 | Feature or defect | Current status | Remaining action | Owner and target |
 |---|---|---|---|
-| **F-15** Favorites and duplicate | planned (contract 1.0 in review); 0 of 9 ACs; no tested commit | Issue; RED tests for AC-15.1–15.9; favorite endpoint, `isFavorite` in history, Favorites screen, Duplicate; F-07 key change (§2.6); merge; release `v0.3.0` | Supichaya · in the checkpoint candidate by 29 Nov |
+| **F-15** Favorites and duplicate (#73) | implemented (9 of 9 ACs pass locally on `feature/F-15-favorites-duplicate`; RED `1764d74`, GREEN `84d41bd`/`fee71b1`; not yet merged) | PR review by Supichaya; merge to `sprint-3-staging`; release `v0.3.0` | Chawin (review: Supichaya) · in the checkpoint candidate by 29 Nov |
 | **F-14** Search and filter | planned (contract 1.0 in review); 0 of 9 ACs; no tested commit | Issue; RED tests for AC-14.1–14.9; strict query schema, filter SQL, filter panel with URL state; merge after F-15 | Chawin · before 13 Dec (checkpoint candidate if tested in time) |
 | **F-17** Administrator creates a user | planned (contract 1.0 in review); 0 of 7 ACs | Issue; RED tests; `POST /admin/users`, `EMAIL_EXISTS`, Create user dialog; merge | Supichaya · before 13 Dec |
 | **F-16** Category summary and monthly report | planned (contract 1.0 in review); 0 of 8 ACs | Issue; RED tests incl. the share-rounding unit test; two summary endpoints; Reports screen; merge | Chawin · before 13 Dec |
